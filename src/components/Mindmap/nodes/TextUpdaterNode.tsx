@@ -1,10 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Handle, Position, useReactFlow } from '@xyflow/react';
 import { RiDeleteBinLine } from 'react-icons/ri';
 import axios from 'axios';
 
 // Styles for the handles
-const handleStyle = { left: 10, };
+const handleStyle = { left: 10 };
 
 // Interface for the TextUpdaterNode component props
 interface TextUpdaterNodeProps {
@@ -18,20 +18,44 @@ interface TextUpdaterNodeProps {
 
 // The component for the dynamic condition node
 function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
-  const { setNodes, setEdges, addEdges, getNode } = useReactFlow();
+  const { setNodes, setEdges, addEdges, getNode, getEdges } = useReactFlow();
 
   // State to hold multiple condition rows
   const [conditions, setConditions] = useState([
     { condition: 'Fever', operator: '>', value: '101°F' },
   ]);
 
-  // Function to handle text input change
+  // Function to handle text input change (updates node text)
   const onChange = useCallback(
     (evt: React.ChangeEvent<HTMLInputElement>) => {
-      data.onChange(evt.target.value);
+      const newText = evt.target.value;
+      data.onChange(newText);
+
+      // Update node title in React Flow state
+      setNodes((nodes) =>
+        nodes.map((node) =>
+          node.id === data.id ? { ...node, data: { ...node.data, text: newText } } : node
+        )
+      );
     },
-    [data]
+    [data, setNodes]
   );
+
+  // Function to handle adding a new condition row
+  const addConditionRow = () => {
+    const newConditions = [...conditions, { condition: '', operator: '', value: '' }];
+    setConditions(newConditions);
+
+    // Update node conditions in React Flow state
+    setNodes((nodes) =>
+      nodes.map((node) =>
+        node.id === data.id ? { ...node, data: { ...node.data, conditions: newConditions } } : node
+      )
+    );
+  };
+
+
+  console.log("sks")
 
   // Function to delete the current node
   const handleDelete = () => {
@@ -41,29 +65,31 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
     );
   };
 
-  // Function to handle adding a new condition row
-  const addConditionRow = () => {
-    setConditions([...conditions, { condition: '', operator: '', value: '' }]);
-    setNodes((nodes) => [
-      ...nodes,
-      {
-        id: `${data.id}-${nodes.length + 1}`,
-        type: 'textUpdater',
-        position: { x: Math.random() * 400, y: Math.random() * 400 },
-        data: { text: 'New Node', lalal: 'ssss' },
-      },
-    ]);
-  };
-
   // Function to handle deleting a specific condition row
   const deleteConditionRow = (index: number) => {
-    setConditions((prev) => prev.filter((_, i) => i !== index));
+    const updatedConditions = conditions.filter((_, i) => i !== index);
+    setConditions(updatedConditions);
+
+    // Update node conditions in React Flow state
+    setNodes((nodes) =>
+      nodes.map((node) =>
+        node.id === data.id ? { ...node, data: { ...node.data, conditions: updatedConditions } } : node
+      )
+    );
   };
 
   // Function to update a specific condition row
   const updateConditionRow = (index: number, field: string, value: string) => {
-    setConditions((prev) =>
-      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row))
+    const updatedConditions = conditions.map((row, i) =>
+      i === index ? { ...row, [field]: value } : row
+    );
+    setConditions(updatedConditions);
+
+    // Update node conditions in React Flow state
+    setNodes((nodes) =>
+      nodes.map((node) =>
+        node.id === data.id ? { ...node, data: { ...node.data, conditions: updatedConditions } } : node
+      )
     );
   };
 
@@ -72,19 +98,33 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
 
     const sourceNode = getNode(data.id); // Get the source node
     if (sourceNode) {
-      addEdges({ id: `${sourceNode.id}-edge`, source: sourceNode.id, target: '' });
+      // Add a new edge (right-click starts the edge)
+      addEdges({
+        id: `${sourceNode.id}-edge-${Date.now()}`,
+        source: sourceNode.id,
+        target: '', // We'll update this dynamically on connection
+        type: 'smoothstep',
+      });
     }
   };
 
-  // Update node data with conditions when Save is clicked
+  // Sync the node data (conditions) with backend
   const handleSave = async () => {
     try {
-      // Example of sending updated node data to the backend
       await axios.put(`/api/nodes/${data.id}`, { ...data, conditions });
     } catch (error) {
       console.error('Failed to save node data:', error);
     }
   };
+
+  useEffect(() => {
+    // Update node data when conditions change
+    setNodes((nodes) =>
+      nodes.map((node) =>
+        node.id === data.id ? { ...node, data: { ...node.data, conditions } } : node
+      )
+    );
+  }, [conditions, data.id, setNodes]);
 
   return (
     <div
@@ -98,7 +138,7 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
         maxWidth: '650px',
         fontFamily: 'Arial, sans-serif',
       }}
-      onContextMenu={handleRightClick} // Right-click handler to start an edge
+      onContextMenu={handleRightClick}
     >
       <div
         style={{
@@ -140,6 +180,7 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
           </div>
           <button
             type="button"
+            title='Save'
             onClick={handleDelete}
             style={{
               backgroundColor: 'transparent',
@@ -152,6 +193,7 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
             &#10006;
           </button>
         </div>
+
         <div
           style={{
             display: 'flex',
@@ -177,6 +219,7 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
           </select>
           <button
             type="button"
+            title="Save"
             style={{
               backgroundColor: 'transparent',
               border: 'none',
@@ -232,11 +275,7 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
               marginRight: '10px',
             }}
           >
-            <option value="+">+</option>
-            <option value="-">-</option>
-            <option value="*">*</option>
-            <option value="/">/</option>
-            <option value="%">%</option>
+         
             <option value=">">{'>'}</option>
             <option value="<">{'<'}</option>
             <option value="=">{'='}</option>
@@ -257,70 +296,49 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
             }}
           />
           <button
+            type="button"
             title="Delete"
+            onClick={() => deleteConditionRow(index)}
             style={{
               backgroundColor: 'transparent',
               border: 'none',
+              fontSize: '20px',
+              color: '#333',
               cursor: 'pointer',
             }}
-            type="button"
-            onClick={() => deleteConditionRow(index)}
           >
-            <RiDeleteBinLine color="black" size={24} />
+            <RiDeleteBinLine />
           </button>
         </div>
       ))}
 
       <button
-        type="button"
         onClick={addConditionRow}
+        title='Add Row'
         style={{
-          width: '30%',
-          padding: '10px',
-          backgroundColor: 'rgb(168, 222, 240)',
-          color: 'rgb(31, 31, 201)',
+          padding: '10px 20px',
+          backgroundColor: '#007BFF',
+          color: '#fff',
           border: 'none',
           borderRadius: '5px',
           cursor: 'pointer',
-          marginTop: '10px',
         }}
       >
-        Add Condition
+        Add Row
       </button>
 
-      {/* <button
-        type="button"
-        onClick={handleSave}
-        style={{
-          width: '30%',
-          padding: '10px',
-          backgroundColor: 'rgb(31, 31, 201)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer',
-          marginTop: '10px',
-        }}
-      >
-        Save
-      </button> */}
-
-      <Handle
-        type="source"
-        position={Position.Left}
-        id="b"
-        style={handleStyle}
-        isConnectable={isConnectable}
-      />
       <Handle
         type="target"
-        position={Position.Right}
-        
-        id="a"
-        style={handleStyle}
+        position={Position.Top}
         isConnectable={isConnectable}
+        style={handleStyle}
       />
-      
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        isConnectable={isConnectable}
+        style={handleStyle}
+      />
     </div>
   );
 }
