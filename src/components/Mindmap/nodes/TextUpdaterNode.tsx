@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Handle, Position, useReactFlow } from '@xyflow/react';
 import { RiDeleteBinLine } from 'react-icons/ri';
 import axios from 'axios';
+import { edgeTypes } from '../edges';
 
 // Styles for the handles
 const handleStyle = { left: 10 };
@@ -11,25 +12,27 @@ interface TextUpdaterNodeProps {
   data: {
     id: string;
     text: string;
+    conditions?: { key: string; expression: string; value: string }[];
     onChange: (value: string) => void;
+    onChangeConditions: (conditions: { key: string; expression: string; value: string }[]) => void;
   };
   isConnectable: boolean;
 }
 
 // The component for the dynamic condition node
 function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
-  const { setNodes, setEdges, addEdges, getNode, getEdges } = useReactFlow();
+  const { setNodes, setEdges, addEdges, getNode, getEdges,getNodes } = useReactFlow();
 
   // State to hold multiple condition rows
   const [conditions, setConditions] = useState([
-    { condition: 'Fever', operator: '>', value: '101°F' },
+    { key: '', expression: '', value: '' },
   ]);
 
   // Function to handle text input change (updates node text)
-  const onChange = useCallback(
+  const onChange =  
     (evt: React.ChangeEvent<HTMLInputElement>) => {
-      const newText = evt.target.value;
-      data.onChange(newText);
+      const newText = evt.target.value; 
+      data?.onChange(newText);
 
       // Update node title in React Flow state
       setNodes((nodes) =>
@@ -37,13 +40,15 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
           node.id === data.id ? { ...node, data: { ...node.data, text: newText } } : node
         )
       );
-    },
-    [data, setNodes]
-  );
+    
+    }
+    
+   
+  
 
   // Function to handle adding a new condition row
   const addConditionRow = () => {
-    const newConditions = [...conditions, { condition: '', operator: '', value: '' }];
+    const newConditions = [...conditions, { key: '', expression: '', value: '' }];
     setConditions(newConditions);
 
     // Update node conditions in React Flow state
@@ -54,13 +59,12 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
     );
   };
 
-
-  console.log("sks")
-
+ 
+    console.log(">>>L<>>>",getNodes())
   // Function to delete the current node
   const handleDelete = () => {
     setNodes((nodes) => nodes.filter((node) => node.id !== data.id));
-    setEdges((edges) =>
+    setEdges((edges) => 
       edges.filter((edge) => edge.source !== data.id && edge.target !== data.id)
     );
   };
@@ -85,6 +89,8 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
     );
     setConditions(updatedConditions);
 
+    data?.onChangeConditions(updatedConditions);
+
     // Update node conditions in React Flow state
     setNodes((nodes) =>
       nodes.map((node) =>
@@ -94,21 +100,21 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
   };
 
   const handleRightClick = (event: React.MouseEvent) => {
-    event.preventDefault(); // Prevent the default context menu
+    event.preventDefault();  
 
-    const sourceNode = getNode(data.id); // Get the source node
+    const sourceNode = getNode(data.id); 
     if (sourceNode) {
-      // Add a new edge (right-click starts the edge)
+    
       addEdges({
         id: `${sourceNode.id}-edge-${Date.now()}`,
         source: sourceNode.id,
-        target: '', // We'll update this dynamically on connection
+        target: '',  
         type: 'smoothstep',
       });
     }
   };
 
-  // Sync the node data (conditions) with backend
+  
   const handleSave = async () => {
     try {
       await axios.put(`/api/nodes/${data.id}`, { ...data, conditions });
@@ -118,13 +124,15 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
   };
 
   useEffect(() => {
-    // Update node data when conditions change
+ 
     setNodes((nodes) =>
       nodes.map((node) =>
         node.id === data.id ? { ...node, data: { ...node.data, conditions } } : node
       )
     );
   }, [conditions, data.id, setNodes]);
+
+  console.log(">>>L<>>>",getEdges())
 
   return (
     <div
@@ -234,7 +242,7 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
         </div>
       </div>
 
-      {conditions.map((condition, index) => (
+      {data?.conditions?.map((condition, index) => (
         <div
           key={index}
           style={{
@@ -249,9 +257,10 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
           <input
             type="text"
             placeholder="Condition"
-            value={condition.condition}
+            name='key'
+            value={condition.key}
             onChange={(e) =>
-              updateConditionRow(index, 'condition', e.target.value)
+              updateConditionRow(index, 'key', e.target.value)
             }
             style={{
               flex: 1,
@@ -263,9 +272,10 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
           />
           <select
             title="Operator"
-            value={condition.operator}
+            name='expression'
+            value={condition.expression}
             onChange={(e) =>
-              updateConditionRow(index, 'operator', e.target.value)
+              updateConditionRow(index, 'expression', e.target.value)
             }
             style={{
               width: '80px',
@@ -283,6 +293,7 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
           <input
             type="text"
             placeholder="Value"
+            name='value'
             value={condition.value}
             onChange={(e) =>
               updateConditionRow(index, 'value', e.target.value)
