@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
 import companyLogo from '../../assets/company.svg';
 
-export default function Login({ onLogin }) {
-      const [email, setEmail] = useState('');
-      const [password, setPassword] = useState('');
+export default function Login({ onLogin }: { onLogin: () => void }) {
+  console.log('Login Component',onLogin);
+      // const [email, setEmail] = useState('');
+      // const [password, setPassword] = useState('');
     
-      const handleSubmit = (e:any) => {
-        e.preventDefault();
-        // Authentication logic (replace with actual login check)
-        if (email === 'admin' && password === 'password') {
-          onLogin();
-        } else {
-          alert('Invalid credentials');
-        }
-      };
+      // const handleSubmit = (e:any) => {
+      //   e.preventDefault();
+      //   // Authentication logic (replace with actual login check)
+      //   if (email === 'admin' && password === 'password') {
+      //     onLogin();
+      //   } else {
+      //     alert('Invalid credentials');
+      //   }
+      // };
   return (
     <div className="min-h-screen flex items-center justify-center w-full bg-gray-100">
       <div className="flex   bg-white shadow-lg rounded-lg overflow-hidden h-screen w-screen">

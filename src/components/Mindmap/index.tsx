@@ -1,32 +1,36 @@
-import React, { useState, useEffect, MouseEvent as ReactMouseEvent } from "react";
+import  {
+  useEffect,
+  MouseEvent as ReactMouseEvent,
+} from "react";
 import {
   Background,
-  Controls,
-  MiniMap,
+ 
   ReactFlow,
   addEdge,
   useNodesState,
   useEdgesState,
-  type OnConnect,
+  
   BackgroundVariant,
-  Edge,
+ 
   Node,
   Edge as FlowEdge,
 } from "@xyflow/react";
-import '@xyflow/react/dist/style.css';
-import axios from 'axios';
+import "@xyflow/react/dist/style.css";
+import axios from "axios";
 
 import { initialNodes, nodeTypes } from "./nodes";
 import { initialEdges, edgeTypes } from "./edges";
+import { useParams } from "react-router-dom";
 
 export default function App() {
+  const { ruleId } = useParams();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<FlowEdge>(initialEdges);
-  const [nodeId, setNodeId] = useState<number>(5); // Track node ids
+  const [edges, setEdges, onEdgesChange] =
+    useEdgesState<FlowEdge>(initialEdges);
 
   const transformNodesForBackend = (nodes: Node[]) => {
     return nodes.map((node) => ({
-      name: node.data?.text || '', // Ensure 'name' matches with your schema, use default value if needed
+      name: node.data?.text || "", // Ensure 'name' matches with your schema, use default value if needed
       type: node.type,
       nodeId: node.id,
       inputs: [], // Handle or map inputs if needed
@@ -36,7 +40,7 @@ export default function App() {
       measured: {
         height: node.measured?.height || 0,
         width: node.measured?.width || 0,
-      }, 
+      },
       position: node.position,
       branches: [], // Handle or map branches if needed
       conditions: node.data?.conditions || [],
@@ -45,7 +49,7 @@ export default function App() {
 
   const transformNodesFromBackend = (backendNodes: any[]) => {
     return backendNodes?.map((node) => ({
-      id: node.nodeId  ,
+      id: node.nodeId,
       type: node.type,
       position: {
         x: node.position?.x || 0,
@@ -53,22 +57,29 @@ export default function App() {
       },
 
       data: {
+        id: node.nodeId,
         text: node.name,
         conditions: node.conditions || [],
         onChange: (newText: string) => {
-        setNodes((nodes) =>
-          nodes.map((n) =>
-            n.id === node.nodeId ? { ...n, data: { ...n.data, text: newText } } : n
-          )
-        );
-      },
-       onChangeConditions: (newConditions: { key: string; expression: string; value: string }[]) => {
-        setNodes((nodes) =>
-          nodes.map((n) =>
-            n.id === node.nodeId ? { ...n, data: { ...n.data, conditions: newConditions } } : n
-          )
-        );  
-      }
+          setNodes((nodes) =>
+            nodes.map((n) =>
+              n.id === node.nodeId
+                ? { ...n, data: { ...n.data, text: newText } }
+                : n
+            )
+          );
+        },
+        onChangeConditions: (
+          newConditions: { key: string; expression: string; value: string }[]
+        ) => {
+          setNodes((nodes) =>
+            nodes.map((n) =>
+              n.id === node.nodeId
+                ? { ...n, data: { ...n.data, conditions: newConditions } }
+                : n
+            )
+          );
+        },
       },
       measured: {
         height: node.measured?.height || 0,
@@ -80,13 +91,15 @@ export default function App() {
   useEffect(() => {
     const fetchNodes = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/node');
+        const response = await axios.get(
+          `http://localhost:3000/api/node?id=${ruleId}`
+        );
         const backendNodes = response.data.result;
-        const backendEdges = response.data.edges;
+        // const backendEdges = response.data.edges;
         setNodes(transformNodesFromBackend(backendNodes));
-        setEdges(backendEdges);
+        // setEdges(backendEdges);
       } catch (error) {
-        console.error('Error fetching nodes:', error);
+        console.error("Error fetching nodes:", error);
       }
     };
     fetchNodes();
@@ -95,9 +108,10 @@ export default function App() {
   // Function to save nodes to the backend
   const saveNodesToBackend = async () => {
     try {
-      console.log('Saving nodes:', nodes);
-      console.log('Saving edges:', edges);
-      const response = await axios.post('http://localhost:3000/api/node', {
+      console.log("Saving nodes:", nodes);
+      console.log("Saving edges:", ruleId);
+      const response = await axios.post("http://localhost:3000/api/node", {
+        ruleId: ruleId,
         nodes: transformNodesForBackend(nodes),
         edges: edges?.map((edge) => ({
           source: edge.source,
@@ -105,47 +119,65 @@ export default function App() {
           type: edge.type,
         })),
       });
-      console.log('Nodes saved successfully', response.data);
+      console.log("Nodes saved successfully", response.data);
     } catch (error) {
-      console.error('Error saving nodes:', error);
+      console.error("Error saving nodes:", error);
     }
   };
 
   // Function to add a new node
   const addNewNode = () => {
-    const uniqueId  =  Math.random().toString(36).substring(7);
+    const uniqueId = Math.random().toString(36).substring(7);
+
     setNodes((nds) => [
       ...nds,
       {
         id: `${uniqueId}`,
         type: "textUpdater",
         position: { x: Math.random() * 400, y: Math.random() * 400 },
-        data: { id: uniqueId, text: "New Node", conditions: [] },
+        data: {
+          id: uniqueId,
+          text: "",
+          conditions: [],
+          onChange: () => {},
+          onChangeConditions: () => {},
+        },
       },
     ]);
-    
   };
 
   // Function to handle edge click
-  const onEdgeClick = (event: ReactMouseEvent<Element, MouseEvent>, edge: FlowEdge) => {
+  const onEdgeClick = (
+    event: ReactMouseEvent<Element, MouseEvent>,
+    edge: FlowEdge
+  ) => {
     event.preventDefault();
     event.stopPropagation();
     setEdges((edges) => edges.filter((e) => e.id !== edge.id));
   };
-
   return (
     <>
-      <button type="button" onClick={addNewNode} className="bg-blue-500 text-white  px-4 py-2 rounded-lg shadow hover:bg-blue-700 ">Add Node</button>
-      <button type="button" onClick={saveNodesToBackend} className="ml-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700">
+      <button
+        type="button"
+        onClick={addNewNode}
+        className="bg-blue-500 text-white  px-4 py-2 rounded-lg shadow hover:bg-blue-700 "
+      >
+        Add Node
+      </button>
+      <button
+        type="button"
+        onClick={saveNodesToBackend}
+        className="ml-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700"
+      >
         Save Nodes
       </button>
 
       <ReactFlow
         nodes={nodes}
         style={{
-          width: '100%',
-          height: '100vh',
-          backgroundColor: '#f0f0f0',
+          width: "100%",
+          height: "100vh",
+          backgroundColor: "#f0f0f0",
         }}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
@@ -153,7 +185,9 @@ export default function App() {
         edgeTypes={edgeTypes}
         onEdgesChange={onEdgesChange}
         onEdgeClick={onEdgeClick}
-        onConnect={(connection) => setEdges((edges) => addEdge(connection, edges))}
+        onConnect={(connection) =>
+          setEdges((edges) => addEdge(connection, edges))
+        }
         fitView
         fitViewOptions={{
           padding: 20,

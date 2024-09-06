@@ -11,18 +11,18 @@ import Login from './components/Auth/Login';
 // Simulate authentication service
 const fakeAuth = {
   isAuthenticated: true,
-  authenticate(cb) {
+  authenticate(cb: () => void) {
     fakeAuth.isAuthenticated = true;
     setTimeout(cb, 100); // fake async
   },
-  signout(cb) {
+  signout(cb: () => void) {
     fakeAuth.isAuthenticated = false;
     setTimeout(cb, 100); // fake async
   }
 };
 
 // PrivateRoute component to protect routes
-function PrivateRoute({ children }) {
+function PrivateRoute({ children }: { children: React.ReactNode }) {
   return fakeAuth.isAuthenticated ? children : <Navigate to="/login" />;
 }
 
@@ -40,11 +40,11 @@ function App() {
     });
   };
 
-  const handleLogout = () => {
-    fakeAuth.signout(() => {
-      setIsAuthenticated(false);
-    });
-  };
+  // const handleLogout = () => {
+  //   fakeAuth.signout(() => {
+  //     setIsAuthenticated(false);
+  //   });
+  // };
 
   return (
     <Router>
@@ -57,7 +57,7 @@ function App() {
             <Routes>
               <Route path="/login" element={<Login onLogin={handleLogin} />} />
               <Route
-                path="/mindmap"
+                path="/mindmap/:ruleId"
                 element={
                   <PrivateRoute>
                     <MindMap />

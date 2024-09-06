@@ -1,8 +1,6 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { Handle, Position, useReactFlow } from '@xyflow/react';
-import { RiDeleteBinLine } from 'react-icons/ri';
-import axios from 'axios';
-import { edgeTypes } from '../edges';
+import React, { useState} from "react";
+import { Handle, Position, useReactFlow } from "@xyflow/react";
+import { RiDeleteBinLine } from "react-icons/ri";
 
 // Styles for the handles
 const handleStyle = { left: 10 };
@@ -12,59 +10,64 @@ interface TextUpdaterNodeProps {
   data: {
     id: string;
     text: string;
-    conditions?: { key: string; expression: string; value: string }[];
+    conditions: { key: string; expression: string; value: string }[];
     onChange: (value: string) => void;
-    onChangeConditions: (conditions: { key: string; expression: string; value: string }[]) => void;
+    onChangeConditions: (
+      conditions: { key: string; expression: string; value: string }[]
+    ) => void;
   };
   isConnectable: boolean;
 }
 
 // The component for the dynamic condition node
 function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
-  const { setNodes, setEdges, addEdges, getNode, getEdges,getNodes } = useReactFlow();
+  const { setNodes, setEdges, addEdges, getNode, getEdges, getNodes } =
+    useReactFlow();
 
   // State to hold multiple condition rows
   const [conditions, setConditions] = useState([
-    { key: '', expression: '', value: '' },
+    { key: "", expression: "", value: "" },
   ]);
 
   // Function to handle text input change (updates node text)
-  const onChange =  
-    (evt: React.ChangeEvent<HTMLInputElement>) => {
-      const newText = evt.target.value; 
-      data?.onChange(newText);
+  const onChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
+    const newText = evt.target.value;
+    data?.onChange(newText);
 
-      // Update node title in React Flow state
-      setNodes((nodes) =>
-        nodes.map((node) =>
-          node.id === data.id ? { ...node, data: { ...node.data, text: newText } } : node
-        )
-      );
-    
-    }
-    
-   
-  
-
-  // Function to handle adding a new condition row
-  const addConditionRow = () => {
-    const newConditions = [...conditions, { key: '', expression: '', value: '' }];
-    setConditions(newConditions);
-
-    // Update node conditions in React Flow state
+    // Update node title in React Flow state
     setNodes((nodes) =>
       nodes.map((node) =>
-        node.id === data.id ? { ...node, data: { ...node.data, conditions: newConditions } } : node
+        node.id === data.id
+          ? { ...node, data: { ...node.data, text: newText } }
+          : node
       )
     );
   };
 
- 
-    console.log(">>>L<>>>",getNodes())
+  // Function to handle adding a new condition row
+  const addConditionRow = () => {
+    const newConditions = [
+      ...data.conditions,
+      { key: "", expression: "", value: "" },
+    ];
+    setConditions(newConditions);
+    data?.onChangeConditions(newConditions);
+    // Update node conditions in React Flow state
+    setNodes((nodes) =>
+      nodes.map((node) =>
+        node.id === data.id
+          ? { ...node, data: { ...node.data, conditions: newConditions } }
+          : node
+      )
+    );
+  };
+
+  console.log(">>>L<>>>", getNodes());
   // Function to delete the current node
   const handleDelete = () => {
     setNodes((nodes) => nodes.filter((node) => node.id !== data.id));
-    setEdges((edges) => 
+
+    setEdges((edges) =>
       edges.filter((edge) => edge.source !== data.id && edge.target !== data.id)
     );
   };
@@ -73,11 +76,14 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
   const deleteConditionRow = (index: number) => {
     const updatedConditions = conditions.filter((_, i) => i !== index);
     setConditions(updatedConditions);
+    data?.onChangeConditions(updatedConditions);
 
     // Update node conditions in React Flow state
     setNodes((nodes) =>
       nodes.map((node) =>
-        node.id === data.id ? { ...node, data: { ...node.data, conditions: updatedConditions } } : node
+        node.id === data.id
+          ? { ...node, data: { ...node.data, conditions: updatedConditions } }
+          : node
       )
     );
   };
@@ -94,82 +100,82 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
     // Update node conditions in React Flow state
     setNodes((nodes) =>
       nodes.map((node) =>
-        node.id === data.id ? { ...node, data: { ...node.data, conditions: updatedConditions } } : node
+        node.id === data.id
+          ? { ...node, data: { ...node.data, conditions: updatedConditions } }
+          : node
       )
     );
   };
 
   const handleRightClick = (event: React.MouseEvent) => {
-    event.preventDefault();  
+    event.preventDefault();
 
-    const sourceNode = getNode(data.id); 
+    const sourceNode = getNode(data.id);
     if (sourceNode) {
-    
       addEdges({
         id: `${sourceNode.id}-edge-${Date.now()}`,
         source: sourceNode.id,
-        target: '',  
-        type: 'smoothstep',
+        target: "",
+        type: "smoothstep",
       });
     }
   };
 
-  
-  const handleSave = async () => {
-    try {
-      await axios.put(`/api/nodes/${data.id}`, { ...data, conditions });
-    } catch (error) {
-      console.error('Failed to save node data:', error);
-    }
-  };
+  // const handleSave = async () => {
+  //   try {
+  //     await axios.put(`/api/nodes/${data.id}`, { ...data, conditions });
+  //   } catch (error) {
+  //     console.error("Failed to save node data:", error);
+  //   }
+  // };
 
-  useEffect(() => {
- 
-    setNodes((nodes) =>
-      nodes.map((node) =>
-        node.id === data.id ? { ...node, data: { ...node.data, conditions } } : node
-      )
-    );
-  }, [conditions, data.id, setNodes]);
+  // useEffect(() => {
 
-  console.log(">>>L<>>>",getEdges())
+  //   setNodes((nodes) =>
+  //     nodes.map((node) =>
+  //       node.id === data.id ? { ...node, data: { ...node.data, conditions } } : node
+  //     )
+  //   );
+  // }, [conditions, data.id, setNodes]);
+
+  console.log(">>>L<>>>", getEdges());
 
   return (
     <div
       className="text-updater-node"
       style={{
-        padding: '20px',
-        backgroundColor: '#f9f9f9',
-        borderRadius: '10px',
-        border: '1px solid #ddd',
-        boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)',
-        maxWidth: '650px',
-        fontFamily: 'Arial, sans-serif',
+        padding: "20px",
+        backgroundColor: "#f9f9f9",
+        borderRadius: "10px",
+        border: "1px solid #ddd",
+        boxShadow: "0 0 10px rgba(0, 0, 0, 0.1)",
+        maxWidth: "650px",
+        fontFamily: "Arial, sans-serif",
       }}
       onContextMenu={handleRightClick}
     >
       <div
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          padding: '10px',
-          borderBottom: '1px solid #ddd',
-          marginBottom: '10px',
+          display: "flex",
+          flexDirection: "column",
+          padding: "10px",
+          borderBottom: "1px solid #ddd",
+          marginBottom: "10px",
         }}
       >
         <div
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '10px',
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "10px",
           }}
         >
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              width: '100%',
+              display: "flex",
+              alignItems: "center",
+              width: "100%",
             }}
           >
             <input
@@ -179,23 +185,23 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
               onChange={onChange}
               style={{
                 flex: 1,
-                padding: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '5px',
-                marginRight: '10px',
+                padding: "8px",
+                border: "1px solid #ddd",
+                borderRadius: "5px",
+                marginRight: "10px",
               }}
             />
           </div>
           <button
             type="button"
-            title='Save'
+            title="Save"
             onClick={handleDelete}
             style={{
-              backgroundColor: 'transparent',
-              border: 'none',
-              fontSize: '18px',
-              color: '#333',
-              cursor: 'pointer',
+              backgroundColor: "transparent",
+              border: "none",
+              fontSize: "18px",
+              color: "#333",
+              cursor: "pointer",
             }}
           >
             &#10006;
@@ -204,23 +210,23 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
 
         <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            width: '150px',
+            display: "flex",
+            alignItems: "center",
+            width: "150px",
           }}
         >
           <select
             title="Output"
             style={{
-              width: '80px',
-              fontSize: '17px',
-              padding: '4px',
-              border: 'none',
-              outline: 'none',
-              borderRadius: '5px',
-              backgroundColor: '#f9f9f9',
-              cursor: 'pointer',
-              marginRight: '10px',
+              width: "80px",
+              fontSize: "17px",
+              padding: "4px",
+              border: "none",
+              outline: "none",
+              borderRadius: "5px",
+              backgroundColor: "#f9f9f9",
+              cursor: "pointer",
+              marginRight: "10px",
             }}
           >
             <option value="">output</option>
@@ -229,12 +235,12 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
             type="button"
             title="Save"
             style={{
-              backgroundColor: 'transparent',
-              border: 'none',
-              fontSize: '24px',
-              fontWeight: 'bold',
-              color: '#333',
-              cursor: 'pointer',
+              backgroundColor: "transparent",
+              border: "none",
+              fontSize: "24px",
+              fontWeight: "bold",
+              color: "#333",
+              cursor: "pointer",
             }}
           >
             +
@@ -246,64 +252,59 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
         <div
           key={index}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            marginBottom: '15px',
-            padding: '15px',
-            borderRadius: '10px',
-            backgroundColor: '#f0f0f0',
+            display: "flex",
+            alignItems: "center",
+            marginBottom: "15px",
+            padding: "15px",
+            borderRadius: "10px",
+            backgroundColor: "#f0f0f0",
           }}
         >
           <input
             type="text"
             placeholder="Condition"
-            name='key'
+            name="key"
             value={condition.key}
-            onChange={(e) =>
-              updateConditionRow(index, 'key', e.target.value)
-            }
+            onChange={(e) => updateConditionRow(index, "key", e.target.value)}
             style={{
               flex: 1,
-              padding: '8px',
-              border: '1px solid #ddd',
-              borderRadius: '5px',
-              marginRight: '10px',
+              padding: "8px",
+              border: "1px solid #ddd",
+              borderRadius: "5px",
+              marginRight: "10px",
             }}
           />
           <select
             title="Operator"
-            name='expression'
+            name="expression"
             value={condition.expression}
             onChange={(e) =>
-              updateConditionRow(index, 'expression', e.target.value)
+              updateConditionRow(index, "expression", e.target.value)
             }
             style={{
-              width: '80px',
-              padding: '4px',
-              border: '1px solid #ddd',
-              borderRadius: '5px',
-              marginRight: '10px',
+              width: "80px",
+              padding: "4px",
+              border: "1px solid #ddd",
+              borderRadius: "5px",
+              marginRight: "10px",
             }}
           >
-         
-            <option value=">">{'>'}</option>
-            <option value="<">{'<'}</option>
-            <option value="=">{'='}</option>
+            <option value=">">{">"}</option>
+            <option value="<">{"<"}</option>
+            <option value="=">{"="}</option>
           </select>
           <input
             type="text"
             placeholder="Value"
-            name='value'
+            name="value"
             value={condition.value}
-            onChange={(e) =>
-              updateConditionRow(index, 'value', e.target.value)
-            }
+            onChange={(e) => updateConditionRow(index, "value", e.target.value)}
             style={{
               flex: 1,
-              padding: '8px',
-              border: '1px solid #ddd',
-              borderRadius: '5px',
-              marginRight: '10px',
+              padding: "8px",
+              border: "1px solid #ddd",
+              borderRadius: "5px",
+              marginRight: "10px",
             }}
           />
           <button
@@ -311,11 +312,11 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
             title="Delete"
             onClick={() => deleteConditionRow(index)}
             style={{
-              backgroundColor: 'transparent',
-              border: 'none',
-              fontSize: '20px',
-              color: '#333',
-              cursor: 'pointer',
+              backgroundColor: "transparent",
+              border: "none",
+              fontSize: "20px",
+              color: "#333",
+              cursor: "pointer",
             }}
           >
             <RiDeleteBinLine />
@@ -325,14 +326,14 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
 
       <button
         onClick={addConditionRow}
-        title='Add Row'
+        title="Add Row"
         style={{
-          padding: '10px 20px',
-          backgroundColor: '#007BFF',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer',
+          padding: "10px 20px",
+          backgroundColor: "#007BFF",
+          color: "#fff",
+          border: "none",
+          borderRadius: "5px",
+          cursor: "pointer",
         }}
       >
         Add Row

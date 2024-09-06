@@ -1,14 +1,9 @@
-import React, { useEffect, useState } from "react";
+import   { useEffect, useState } from "react";
 import { fetchRules } from "../../resources/fetchRules";
+import { Link } from "react-router-dom";
+import axios from "axios";
 
-// Define types
-interface Rule {
-  id: string;
-  name: string;
-  objective: string;
-  status: "Active" | "Inactive";
-  lastModified: string;
-}
+ 
 
 type ModalType = "new" | "edit" | "archive" | "";
 
@@ -17,6 +12,9 @@ export default function RuleManagement() {
   const [showDropdown, setShowDropdown] = useState<number | null>(null);
   const [selectedRule, setSelectedRule] = useState<Rule | null>(null);
   const [modalType, setModalType] = useState<ModalType>("");
+  const [ruleName, setRuleName] = useState("");
+  const [isEditing] = useState(false);
+
 
   useEffect(() => {
     fetchRules().then((rules) => setRules(rules));
@@ -27,6 +25,32 @@ export default function RuleManagement() {
     setSelectedRule(rule);
     setModalType(action);
   };
+
+  const handleAdd = async() => { 
+    //call api to add rule
+    console.log("add rule");
+     try {
+        // add
+        const response = await axios.post('http://localhost:3000/api/rules', { name: ruleName });
+        if (response.status === 200) {
+           fetchRules().then((rules) => setRules(rules));
+          setModalType("");
+          setRuleName("");
+        }
+      
+     } catch (error) {
+       console.error('Failed to add rule:', error);
+      
+     }
+   }
+
+  interface Rule {
+  _id: string;
+  name: string;
+  objective?: string;
+  status?: "Active" | "Inactive";
+  lastModified?: string;
+}
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -58,9 +82,9 @@ export default function RuleManagement() {
               </tr>
             </thead>
             <tbody>
-              {rules.map((rule, index) => (
-                <tr className="border-b" key={rule.id}>
-                  <td className="py-4 px-6 text-sm font-medium text-gray-900">{rule.name}</td>
+              {rules?.map((rule, index) => (
+                <tr className="border-b" key={rule._id}>
+                  <td className="py-4 px-6 text-sm font-medium text-gray-900"><Link to={`/mindmap/${rule._id}`}>{rule.name}</Link></td>
                   <td className="py-4 px-6 text-sm text-gray-500">{rule.objective}</td>
                   <td className="py-4 px-6 text-sm">
                     <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${rule.status === "Active" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}`}>
@@ -114,6 +138,11 @@ export default function RuleManagement() {
               <h2 className="text-lg font-semibold mb-4">New Rule</h2>
               <input
                 type="text"
+                name="ruleName"
+                value={isEditing ? selectedRule?.name : ruleName}
+                onChange={(e) => {
+                  isEditing?  '': setRuleName(e.target.value)}}
+                
                 placeholder="Rule Name"
                 className="block w-full px-4 py-2 mb-4 border rounded-lg focus:outline-none focus:border-blue-500"
               />
@@ -124,7 +153,7 @@ export default function RuleManagement() {
                 >
                   Cancel
                 </button>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg">
+                <button type="button" onClick={handleAdd} className="bg-blue-600 text-white px-4 py-2 rounded-lg">
                   Create
                 </button>
               </div>
