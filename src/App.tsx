@@ -23,7 +23,7 @@ const fakeAuth = {
 
 // PrivateRoute component to protect routes
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-  return fakeAuth.isAuthenticated ? children : <Navigate to="/login" />;
+  return fakeAuth.isAuthenticated ? children : <Navigate to="/rules" />;
 }
 
 function App() {
@@ -72,7 +72,7 @@ function App() {
                   </PrivateRoute>
                 }
               />
-              <Route path="*" element={<Navigate to={isAuthenticated ? "/rules" : "/login"} />} />
+              <Route path="*" element={<Navigate to={"/rules"}/>} />
             </Routes>
           </ReactFlowProvider>
         </div>
