@@ -62,7 +62,7 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
     );
   };
 
-  console.log(">>>L<>>>", getNodes());
+  
   // Function to delete the current node
   const handleDelete = () => {
     setNodes((nodes) => nodes.filter((node) => node.id !== data.id));
@@ -183,28 +183,16 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
               placeholder="Text"
               value={data.text}
               onChange={onChange}
-              style={{
-                flex: 1,
-                padding: "8px",
-                border: "1px solid #ddd",
-                borderRadius: "5px",
-                marginRight: "10px",
-              }}
+               className=""
             />
           </div>
           <button
             type="button"
-            title="Save"
+            title="Delete Node"
             onClick={handleDelete}
-            style={{
-              backgroundColor: "transparent",
-              border: "none",
-              fontSize: "18px",
-              color: "#333",
-              cursor: "pointer",
-            }}
+             className="bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-700"
           >
-            &#10006;
+            X
           </button>
         </div>
 
@@ -332,7 +320,7 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
           backgroundColor: "#007BFF",
           color: "#fff",
           border: "none",
-          borderRadius: "5px",
+          borderRadius: "5spx",
           cursor: "pointer",
         }}
       >
@@ -342,13 +330,13 @@ function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
       <Handle
         type="target"
         position={Position.Top}
-        isConnectable={isConnectable}
+        isConnectable={true}
         style={handleStyle}
       />
       <Handle
         type="source"
         position={Position.Bottom}
-        isConnectable={isConnectable}
+        isConnectable={true}
         style={handleStyle}
       />
     </div>

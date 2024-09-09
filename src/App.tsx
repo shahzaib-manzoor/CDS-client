@@ -7,6 +7,8 @@ import { ReactFlowProvider } from '@xyflow/react';
 import SideBar from './components/layout/Sidebar';
 import RuleManagement from './components/rules';
 import Login from './components/Auth/Login';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Simulate authentication service
 const fakeAuth = {
@@ -50,6 +52,7 @@ function App() {
     <Router>
       <div className="flex h-screen">
         {/* Sidebar only for authenticated users */}
+        <ToastContainer />
         {isAuthenticated && <SideBar />}
 
         <div className="flex-1 ml-64 p-4 overflow-auto">

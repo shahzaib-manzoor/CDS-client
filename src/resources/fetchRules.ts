@@ -2,7 +2,7 @@ import axios from "axios";
 
 export const fetchRules = async () => {
   try {
-    const response = await axios.get('http://localhost:3000/api/rules');
+    const response = await axios.get(`${import.meta.env.VITE_API_URL}/rules`);
  
     return  response.data.result;
   } catch (error) {

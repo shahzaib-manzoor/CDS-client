@@ -1,17 +1,11 @@
-import  {
-  useEffect,
-  MouseEvent as ReactMouseEvent,
-} from "react";
+import { useEffect, MouseEvent as ReactMouseEvent } from "react";
 import {
   Background,
- 
   ReactFlow,
   addEdge,
   useNodesState,
   useEdgesState,
-  
   BackgroundVariant,
- 
   Node,
   Edge as FlowEdge,
 } from "@xyflow/react";
@@ -21,6 +15,7 @@ import axios from "axios";
 import { initialNodes, nodeTypes } from "./nodes";
 import { initialEdges, edgeTypes } from "./edges";
 import { useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 
 export default function App() {
   const { ruleId } = useParams();
@@ -30,23 +25,41 @@ export default function App() {
 
   const transformNodesForBackend = (nodes: Node[]) => {
     return nodes.map((node) => ({
-      name: node.data?.text || "", // Ensure 'name' matches with your schema, use default value if needed
+      name: node.data?.text || "",
       type: node.type,
       nodeId: node.id,
-      inputs: [], // Handle or map inputs if needed
-      output: [], // Handle or map output if needed
-      isActive: true, // Default value, handle if needed
-      rules: null, // Handle or map rules if needed
+      inputs: [],
+      output: [],
+      isActive: true,
+      rules: null,
       measured: {
         height: node.measured?.height || 0,
         width: node.measured?.width || 0,
       },
       position: node.position,
-      branches: [], // Handle or map branches if needed
+      branches: [],
       conditions: node.data?.conditions || [],
     }));
   };
 
+  const transformEdgesForBackend = (edges: FlowEdge[]) => {
+    return edges.map((edge) => ({
+      source: edge.source,
+      target: edge.target,
+      type: edge.type,
+      edgeId: edge.id,
+      rules: ruleId,
+    }));
+  };
+
+  const transformEdgesFromBackend = (backendEdges: any[]) => {
+    return backendEdges?.map((edge) => ({
+      id: edge.edgeId,
+      source: edge.source,
+      target: edge.target,
+      type: edge.type,
+    }));
+  };
   const transformNodesFromBackend = (backendNodes: any[]) => {
     return backendNodes?.map((node) => ({
       id: node.nodeId,
@@ -92,40 +105,40 @@ export default function App() {
     const fetchNodes = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3000/api/node?id=${ruleId}`
+          `${import.meta.env.VITE_API_URL}/node?id=${ruleId}`
         );
-        const backendNodes = response.data.result;
-        // const backendEdges = response.data.edges;
+        const backendNodes = response.data.result.nodes;
+
+        const backendEdges = response.data.result.edges;
         setNodes(transformNodesFromBackend(backendNodes));
-        // setEdges(backendEdges);
+
+        setEdges(transformEdgesFromBackend(backendEdges));
       } catch (error) {
         console.error("Error fetching nodes:", error);
       }
     };
-    fetchNodes();
-  }, [setNodes, setEdges]);
 
-  // Function to save nodes to the backend
+    fetchNodes();
+  }, []);
+
   const saveNodesToBackend = async () => {
     try {
-      console.log("Saving nodes:", nodes);
-      console.log("Saving edges:", ruleId);
-      const response = await axios.post("http://localhost:3000/api/node", {
-        ruleId: ruleId,
-        nodes: transformNodesForBackend(nodes),
-        edges: edges?.map((edge) => ({
-          source: edge.source,
-          target: edge.target,
-          type: edge.type,
-        })),
-      });
-      console.log("Nodes saved successfully", response.data);
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/node`,
+        {
+          ruleId: ruleId,
+          nodes: transformNodesForBackend(nodes),
+          edges: transformEdgesForBackend(edges),
+        }
+      );
+      if (response.status === 200) {
+        toast.success("Nodes saved successfully");
+      }
     } catch (error) {
       console.error("Error saving nodes:", error);
     }
   };
 
-  // Function to add a new node
   const addNewNode = () => {
     const uniqueId = Math.random().toString(36).substring(7);
 
@@ -145,8 +158,7 @@ export default function App() {
       },
     ]);
   };
-
-  // Function to handle edge click
+ 
   const onEdgeClick = (
     event: ReactMouseEvent<Element, MouseEvent>,
     edge: FlowEdge
@@ -185,9 +197,9 @@ export default function App() {
         edgeTypes={edgeTypes}
         onEdgesChange={onEdgesChange}
         onEdgeClick={onEdgeClick}
-        onConnect={(connection) =>
-          setEdges((edges) => addEdge(connection, edges))
-        }
+        onConnect={(connection) => {
+          setEdges((edges) => addEdge(connection, edges));
+        }}
         fitView
         fitViewOptions={{
           padding: 20,

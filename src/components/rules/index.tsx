@@ -31,7 +31,7 @@ export default function RuleManagement() {
     console.log("add rule");
      try {
         // add
-        const response = await axios.post('http://localhost:3000/api/rules', { name: ruleName });
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/rules`, { name: ruleName });
         if (response.status === 200) {
            fetchRules().then((rules) => setRules(rules));
           setModalType("");
