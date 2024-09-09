@@ -19,11 +19,13 @@ import { toast } from "react-toastify";
 
 export default function App() {
   const { ruleId } = useParams();
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes || []);
   const [edges, setEdges, onEdgesChange] =
-    useEdgesState<FlowEdge>(initialEdges);
+    useEdgesState<FlowEdge>(initialEdges 
+    || []
+    );
 
-  const transformNodesForBackend = (nodes: Node[]) => {
+  const transformNodesForBackend = (nodes: Node[] = []) => {
     return nodes.map((node) => ({
       name: node.data?.text || "",
       type: node.type,
@@ -42,7 +44,7 @@ export default function App() {
     }));
   };
 
-  const transformEdgesForBackend = (edges: FlowEdge[]) => {
+  const transformEdgesForBackend = (edges: FlowEdge[] = []) => {
     return edges.map((edge) => ({
       source: edge.source,
       target: edge.target,
@@ -52,7 +54,7 @@ export default function App() {
     }));
   };
 
-  const transformEdgesFromBackend = (backendEdges: any[]) => {
+  const transformEdgesFromBackend = (backendEdges: any[] = []) => {
     return backendEdges?.map((edge) => ({
       id: edge.edgeId,
       source: edge.source,
@@ -60,7 +62,7 @@ export default function App() {
       type: edge.type,
     }));
   };
-  const transformNodesFromBackend = (backendNodes: any[]) => {
+  const transformNodesFromBackend = (backendNodes: any[] = []) => {
     return backendNodes?.map((node) => ({
       id: node.nodeId,
       type: node.type,
