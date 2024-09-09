@@ -20,8 +20,8 @@ interface TextUpdaterNodeProps {
 }
 
 // The component for the dynamic condition node
-function TextUpdaterNode({ data, isConnectable }: TextUpdaterNodeProps) {
-  const { setNodes, setEdges, addEdges, getNode, getEdges, getNodes } =
+function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
+  const { setNodes, setEdges, addEdges, getNode, getEdges } =
     useReactFlow();
 
   // State to hold multiple condition rows
