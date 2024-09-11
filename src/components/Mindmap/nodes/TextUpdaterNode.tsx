@@ -168,6 +168,7 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
   };
 
   const updateOutputRow = (index: number, field: string, value: string) => {
+    console.log(">>>", index, field, value);
     const updatedOutputs = outputs.map((row, i) =>
       i === index ? value : row
     );
