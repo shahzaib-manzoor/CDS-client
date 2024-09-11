@@ -1,4 +1,4 @@
-import { useEffect, MouseEvent as ReactMouseEvent } from "react";
+import { useEffect, MouseEvent as ReactMouseEvent, useState } from "react";
 import {
   Background,
   ReactFlow,
@@ -8,6 +8,7 @@ import {
   BackgroundVariant,
   Node,
   Edge as FlowEdge,
+  MarkerType,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import axios from "axios";
@@ -19,12 +20,13 @@ import { toast } from "react-toastify";
 
 export default function App() {
   const { ruleId } = useParams();
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes || []);
-  const [edges, setEdges, onEdgesChange] =
-    useEdgesState<FlowEdge>(initialEdges 
-    || []
-    );
-
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>(
+    initialNodes || []
+  );
+  const [edges, setEdges, onEdgesChange] = useEdgesState<FlowEdge>(
+    initialEdges || []
+  );
+ const [rule, setRule] = useState<any>(null);
   const transformNodesForBackend = (nodes: Node[] = []) => {
     return nodes.map((node) => ({
       name: node.data?.text || "",
@@ -39,6 +41,7 @@ export default function App() {
         width: node.measured?.width || 0,
       },
       position: node.position,
+      outputs: node.data?.outputs || [],
       branches: [],
       conditions: node.data?.conditions || [],
     }));
@@ -60,8 +63,18 @@ export default function App() {
       source: edge.source,
       target: edge.target,
       type: edge.type,
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 20,
+        height: 20,
+        color: '#B2DEFF',
+      },
+      style: {
+        stroke: "#B2DEFF", strokeWidth: 8,
+      },
     }));
   };
+
   const transformNodesFromBackend = (backendNodes: any[] = []) => {
     return backendNodes?.map((node) => ({
       id: node.nodeId,
@@ -70,11 +83,20 @@ export default function App() {
         x: node.position?.x || 0,
         y: node.position?.y || 0,
       },
-
       data: {
         id: node.nodeId,
         text: node.name,
+        outputs: node.outputs || [],
         conditions: node.conditions || [],
+        onChangeOutputs: (newOutputs: string[]) => {
+          setNodes((nodes) =>
+            nodes.map((n) =>
+              n.id === node.nodeId
+                ? { ...n, data: { ...n.data, outputs: newOutputs } }
+                : n
+            )
+          );
+        },
         onChange: (newText: string) => {
           setNodes((nodes) =>
             nodes.map((n) =>
@@ -110,10 +132,12 @@ export default function App() {
           `${import.meta.env.VITE_API_URL}/node?id=${ruleId}`
         );
         const backendNodes = response.data.result.nodes;
-
         const backendEdges = response.data.result.edges;
-        setNodes(transformNodesFromBackend(backendNodes));
 
+        console.log("Fetched Nodes:", backendNodes);
+        console.log("Fetched Edges:", backendEdges);
+
+        setNodes(transformNodesFromBackend(backendNodes));
         setEdges(transformEdgesFromBackend(backendEdges));
       } catch (error) {
         console.error("Error fetching nodes:", error);
@@ -121,7 +145,8 @@ export default function App() {
     };
 
     fetchNodes();
-  }, []);
+    fetchRule(ruleId??'');
+  }, [ruleId]);
 
   const saveNodesToBackend = async () => {
     try {
@@ -152,15 +177,16 @@ export default function App() {
         position: { x: Math.random() * 400, y: Math.random() * 400 },
         data: {
           id: uniqueId,
-          text: "",
+          text: "", 
           conditions: [],
           onChange: () => {},
           onChangeConditions: () => {},
+          onChangeOutputs: () => {},
         },
       },
     ]);
   };
- 
+
   const onEdgeClick = (
     event: ReactMouseEvent<Element, MouseEvent>,
     edge: FlowEdge
@@ -169,47 +195,111 @@ export default function App() {
     event.stopPropagation();
     setEdges((edges) => edges.filter((e) => e.id !== edge.id));
   };
-  return (
-    <>
-      <button
-        type="button"
-        onClick={addNewNode}
-        className="bg-blue-500 text-white  px-4 py-2 rounded-lg shadow hover:bg-blue-700 "
-      >
-        Add Node
-      </button>
-      <button
-        type="button"
-        onClick={saveNodesToBackend}
-        className="ml-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700"
-      >
-        Save Nodes
-      </button>
 
-      <ReactFlow
-        nodes={nodes}
-        style={{
-          width: "100%",
-          height: "100vh",
-          backgroundColor: "#f0f0f0",
-        }}
-        nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange}
-        edges={edges}
-        edgeTypes={edgeTypes}
-        onEdgesChange={onEdgesChange}
-        onEdgeClick={onEdgeClick}
-        onConnect={(connection) => {
-          setEdges((edges) => addEdge(connection, edges));
-        }}
-        fitView
-        fitViewOptions={{
-          padding: 20,
-        }}
-      >
-        <Background gap={33} size={4} variant={BackgroundVariant.Dots} />
-        {/* <Controls /> */}
-      </ReactFlow>
+  const fetchRule = async (nodeId: string) => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/rules/${nodeId}`
+      );
+      if (response.status === 200) {
+       setRule(response.data.result);
+      }
+    } catch (error) {
+      console.error("Error fetching node:", error);
+    }
+
+    return null;
+  }
+
+
+   return (
+    <>
+      <div className="fixed top-5 left- z-50 bg-white border-b border-gray-300 px-4 py-2 flex justify-between items-center w-9/12">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm font-semibold text-gray-700">
+            {rule?.name}
+          </span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <button onClick={addNewNode} title="Add" className="focus:outline-none">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 text-gray-500 hover:text-gray-700"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+          </button>
+          <span className="text-sm text-gray-500 cursor-pointer">Node</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <button onClick={saveNodesToBackend} title="Save" className="focus:outline-none">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 text-gray-500 hover:text-gray-700"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </button>
+          <span className="text-sm text-gray-500 cursor-pointer">Save</span>
+          </div>
+      </div>
+  
+      
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          style={{ width: "100%", height: "calc(100vh - 64px)", backgroundColor: "#f0f0f0" }} // Adjust height to account for the fixed bar
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          connectionLineStyle={{ stroke: "#B2DEFF", strokeWidth: 8,strokeLinecap:"square", }}
+          connectionLineContainerStyle={{ stroke: "#B2DEFF", strokeWidth: 8,strokeLinecap:"square", }}
+          connectionRadius={2}
+          defaultMarkerColor="#B2DEFF"
+          connectOnClick={true}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onEdgeClick={onEdgeClick}
+
+          
+          onConnect={(connection) => {
+            console.log("onConnect", connection);
+            const edge = {
+              ...connection,
+              type: "smoothstep",
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+                width: 20,
+                height: 20,
+                color: '#B2DEFF',
+              },
+              style: {
+                stroke: "#B2DEFF", strokeWidth: 8,
+              },
+            }
+            setEdges((edges) => addEdge(edge, edges));
+          }}
+          fitView
+          fitViewOptions={{ padding: 20 }}
+        >
+          <Background gap={33} size={4} variant={BackgroundVariant.Dots} />
+        </ReactFlow>
+   
     </>
   );
 }

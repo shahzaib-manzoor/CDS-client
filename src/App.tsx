@@ -51,11 +51,10 @@ function App() {
   return (
     <Router>
       <div className="flex h-screen">
-        {/* Sidebar only for authenticated users */}
         <ToastContainer />
-        {isAuthenticated && <SideBar />}
+        {isAuthenticated && <SideBar  />}
 
-        <div className="flex-1 ml-64 p-4 overflow-auto">
+        <div className={`flex-1 ${isAuthenticated ? 'md:ml-64' : 'w-full'} p-4 overflow-auto`}>
           <ReactFlowProvider>
             <Routes>
               <Route path="/login" element={<Login onLogin={handleLogin} />} />
@@ -75,13 +74,13 @@ function App() {
                   </PrivateRoute>
                 }
               />
-              <Route path="*" element={<Navigate to={"/rules"}/>} />
+              <Route path="*" element={<Navigate to={"/rules"} />} />
             </Routes>
           </ReactFlowProvider>
         </div>
       </div>
     </Router>
-  );
+  );;
 }
 
 export default App;
