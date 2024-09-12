@@ -8,7 +8,8 @@ import { RxCross2 } from "react-icons/rx";
 const DEFAULT_HANDLE_STYLE = {
   width: 20,
   height: 20,
-  bottom: -5,
+  bottom: 10,
+  right:0
 
 };
 
@@ -202,7 +203,7 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
   //   );
   // }, [conditions, data.id, setNodes]);
 
-  console.log(">>>L<>>>", getEdges());
+ 
 
   return (
     <div
@@ -333,14 +334,14 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
      
       <Handle
         type="target"
-        position={Position.Bottom}
+        position={Position.Left}
         
         isConnectable={true}
          style={{ ...DEFAULT_HANDLE_STYLE, background: '#B2DEFF' }}
       />
        <Handle
         type="source"
-        position={Position.Top}
+        position={Position.Right}
         style={{ ...DEFAULT_HANDLE_STYLE, background:"#B2DEFF"
          }}
 
