@@ -4,13 +4,11 @@ import { RiDeleteBinLine } from "react-icons/ri";
 import { FaPlus } from "react-icons/fa6";
 import { RxCross2 } from "react-icons/rx";
 
-
 const DEFAULT_HANDLE_STYLE = {
   width: 20,
   height: 20,
   bottom: 10,
-  right:0
-
+  right: 0,
 };
 
 // Interface for the TextUpdaterNode component props
@@ -25,14 +23,14 @@ interface TextUpdaterNodeProps {
     onChange: (value: string) => void;
     onChangeConditions: (
       conditions: { key: string; expression: string; value: string }[]
-    ) => void;    
+    ) => void;
   };
   isConnectable: boolean;
 }
 
 // The component for the dynamic condition node
 function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
-  const { setNodes, setEdges, addEdges, getNode, getEdges } = useReactFlow();
+  const { setNodes, setEdges, addEdges, getNode, } = useReactFlow();
 
   const [typeToAdd, setTypeToAdd] = useState("condition");
 
@@ -170,9 +168,7 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
 
   const updateOutputRow = (index: number, field: string, value: string) => {
     console.log(">>>", index, field, value);
-    const updatedOutputs = outputs.map((row, i) =>
-      i === index ? value : row
-    );
+    const updatedOutputs = outputs.map((row, i) => (i === index ? value : row));
     setOutputs(updatedOutputs);
 
     data?.onChangeOutputs(updatedOutputs);
@@ -202,8 +198,6 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
   //     )
   //   );
   // }, [conditions, data.id, setNodes]);
-
- 
 
   return (
     <div
@@ -307,9 +301,7 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
             placeholder="Output"
             name="output"
             value={output}
-            onChange={(e) =>
-              updateOutputRow(index, "output", e.target.value)
-            }
+            onChange={(e) => updateOutputRow(index, "output", e.target.value)}
             className="flex-1 p-2 border border-gray-300 rounded-md mr-2 w-11/12"
           />
           <button
@@ -331,23 +323,18 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
         Save
       </button> */}
 
-     
       <Handle
         type="target"
         position={Position.Left}
-        
         isConnectable={true}
-         style={{ ...DEFAULT_HANDLE_STYLE, background: '#B2DEFF' }}
+        style={{ ...DEFAULT_HANDLE_STYLE, background: "#B2DEFF" }}
       />
-       <Handle
+      <Handle
         type="source"
         position={Position.Right}
-        style={{ ...DEFAULT_HANDLE_STYLE, background:"#B2DEFF"
-         }}
-
+        style={{ ...DEFAULT_HANDLE_STYLE, background: "#B2DEFF" }}
         isConnectable={true}
-        
-      />  
+      />
     </div>
   );
 }
