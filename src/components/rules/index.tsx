@@ -1,11 +1,9 @@
-import   { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { fetchRules } from "../../resources/fetchRules";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
- 
-
-type ModalType = "new" | "edit" | "archive" | "";
+type ModalType = "new" | "edit" | "archive" | "view"| "";
 
 export default function RuleManagement() {
   const [rules, setRules] = useState<Rule[]>([]);
@@ -14,43 +12,75 @@ export default function RuleManagement() {
   const [modalType, setModalType] = useState<ModalType>("");
   const [ruleName, setRuleName] = useState("");
   const [isEditing] = useState(false);
-
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const history = useNavigate();
 
   useEffect(() => {
-    fetchRules().then((rules) => setRules(rules));
+    fetchRules(
+      "Active"
+    ).then((rules) => setRules(rules));
     return () => setRules([]);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const handleActionClick = (action: ModalType, rule: Rule) => {
     setSelectedRule(rule);
     setModalType(action);
+    if (action === "edit" || action === "view") {
+      history(`/mindmap/${rule._id}`);
+    }
+    if(action === "archive") {
+      //call api to archive rule
+      try {
+        // archive
+        axios.put(`${import.meta.env.VITE_API_URL}/rules/${rule._id}`, { status: "Archive" }).then(() => {
+          fetchRules("Active").then((rules) => setRules(rules));
+          setModalType("");
+        });
+      }
+      catch (error) {
+        console.error('Failed to archive rule:', error);
+    } finally{
+      fetchRules("Active").then((rules) => setRules(rules));
+    }
+  }
   };
 
-  const handleAdd = async() => { 
+  const handleAdd = async () => {
     //call api to add rule
     console.log("add rule");
-     try {
-        // add
-        const response = await axios.post(`${import.meta.env.VITE_API_URL}/rules`, { name: ruleName });
-        if (response.status === 200) {
-           fetchRules().then((rules) => setRules(rules));
-          setModalType("");
-          setRuleName("");
-        }
-      
-     } catch (error) {
-       console.error('Failed to add rule:', error);
-      
-     }
-   }
+    try {
+      // add
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/rules`, { name: ruleName });
+      if (response.status === 200) {
+        fetchRules("Active").then((rules) => setRules(rules));
+        setModalType("");
+        setRuleName("");
+      }
+    } catch (error) {
+      console.error('Failed to add rule:', error);
+    }
+  }
 
   interface Rule {
-  _id: string;
-  name: string;
-  objective?: string;
-  status?: "Active" | "Inactive";
-  lastModified?: string;
-}
+    _id: string;
+    name: string;
+    objective?: string;
+    status?: "Active" | "Inactive";
+    lastModified?: string;
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -61,7 +91,7 @@ export default function RuleManagement() {
             <div className="text-gray-500 text-sm mb-2">Home / Rule Management</div>
             <h1 className="text-3xl font-bold text-gray-700">Rule Management</h1>
           </div>
-          <button 
+          <button
             className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700"
             onClick={() => setModalType("new")}
           >
@@ -70,7 +100,7 @@ export default function RuleManagement() {
         </header>
 
         {/* Table */}
-        <div className="overflow-x-auto border rounded-lg bg-white shadow">
+        <div className="overflow-x-auto border rounded-lg bg-white shadow min-h-screen">
           <table className="min-w-full bg-white">
             <thead className="bg-gray-50">
               <tr>
@@ -83,7 +113,7 @@ export default function RuleManagement() {
             </thead>
             <tbody>
               {rules?.map((rule, index) => (
-                <tr className="border-b" key={rule._id}>
+                <tr className="border-b relative" key={rule._id}>
                   <td className="py-4 px-6 text-sm font-medium text-gray-900"><Link to={`/mindmap/${rule._id}`}>{rule.name}</Link></td>
                   <td className="py-4 px-6 text-sm text-gray-500">{rule.objective}</td>
                   <td className="py-4 px-6 text-sm">
@@ -93,19 +123,19 @@ export default function RuleManagement() {
                   </td>
                   <td className="py-4 px-6 text-sm text-gray-500">{rule.lastModified}</td>
                   <td className="py-4 px-6 text-sm text-gray-500 relative">
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       className="text-gray-400 hover:text-gray-600"
                       onClick={() => setShowDropdown((prev) => prev === index ? null : index)}
                     >
                       &#8230;
                     </button>
                     {showDropdown === index && (
-                      <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border">
+                      <div ref={dropdownRef} className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border z-10">
                         <ul>
                           <li
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
-                            onClick={() => handleActionClick("edit", rule)}
+                            onClick={() => handleActionClick("view", rule)}
                           >
                             View
                           </li>
@@ -141,8 +171,8 @@ export default function RuleManagement() {
                 name="ruleName"
                 value={isEditing ? selectedRule?.name : ruleName}
                 onChange={(e) => {
-                  isEditing?  '': setRuleName(e.target.value)}}
-                
+                  isEditing ? '' : setRuleName(e.target.value)
+                }}
                 placeholder="Rule Name"
                 className="block w-full px-4 py-2 mb-4 border rounded-lg focus:outline-none focus:border-blue-500"
               />

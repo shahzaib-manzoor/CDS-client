@@ -133,10 +133,7 @@ export default function App() {
         );
         const backendNodes = response.data.result.nodes;
         const backendEdges = response.data.result.edges;
-
-        console.log("Fetched Nodes:", backendNodes);
-        console.log("Fetched Edges:", backendEdges);
-
+        
         setNodes(transformNodesFromBackend(backendNodes));
         setEdges(transformEdgesFromBackend(backendEdges));
       } catch (error) {

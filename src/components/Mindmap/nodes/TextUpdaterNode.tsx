@@ -7,7 +7,6 @@ import { RxCross2 } from "react-icons/rx";
 const DEFAULT_HANDLE_STYLE = {
   width: 20,
   height: 20,
-  bottom: 10,
   right: 0,
 };
 
@@ -30,8 +29,7 @@ interface TextUpdaterNodeProps {
 
 // The component for the dynamic condition node
 function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
-  const { setNodes, setEdges, addEdges, getNode, } = useReactFlow();
-
+  const { setNodes, setEdges, addEdges, getNode } = useReactFlow();
   const [typeToAdd, setTypeToAdd] = useState("condition");
 
   // State to hold multiple condition rows
@@ -72,7 +70,6 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
   // Function to handle adding a new condition row
   const addConditionRow = () => {
     if (typeToAdd === "output") {
-      console.log(">>>", typeToAdd);
       addOutput();
       return;
     } else {
@@ -167,7 +164,7 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
   };
 
   const updateOutputRow = (index: number, field: string, value: string) => {
-    console.log(">>>", index, field, value);
+    console.log("index", field);
     const updatedOutputs = outputs.map((row, i) => (i === index ? value : row));
     setOutputs(updatedOutputs);
 
@@ -182,22 +179,10 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
     );
   };
 
-  // const handleSave = async () => {
-  //   try {
-  //     await axios.put(`/api/nodes/${data.id}`, { ...data, conditions });
-  //   } catch (error) {
-  //     console.error("Failed to save node data:", error);
-  //   }
-  // };
-
-  // useEffect(() => {
-
-  //   setNodes((nodes) =>
-  //     nodes.map((node) =>
-  //       node.id === data.id ? { ...node, data: { ...node.data, conditions } } : node
-  //     )
-  //   );
-  // }, [conditions, data.id, setNodes]);
+  const positionHandle = (index: number) => {
+    const calculated = 210 + index * 80;
+    return calculated;
+  };
 
   return (
     <div
@@ -230,7 +215,7 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
             title="Output"
             value={typeToAdd}
             onChange={(e) => setTypeToAdd(e.target.value)}
-            className="bg-transparent   px-6 py-3 rounded-lg shadow   text-black"
+            className="bg-transparent px-6 py-3 rounded-lg shadow text-black"
           >
             <option value="condition">Condition</option>
             <option value="output">Output</option>
@@ -239,7 +224,7 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
             onClick={addConditionRow}
             type="button"
             title="Add"
-            className="ml-4 font-bold   text-black px-4 py-2 rounded-lg "
+            className="ml-4 font-bold text-black px-4 py-2 rounded-lg "
           >
             <FaPlus />
           </button>
@@ -249,7 +234,7 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
       {data?.conditions?.map((condition, index) => (
         <div
           key={index}
-          className="p-4 border-b border-gray-200 bg-[#f0f0f0] rounded-lg  "
+          className="p-4 border-b border-gray-200 bg-[#f0f0f0] rounded-lg"
         >
           <input
             type="text"
@@ -294,7 +279,7 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
       {data?.outputs?.map((output: any, index: number) => (
         <div
           key={index}
-          className="p-3 border-b border-gray-200 bg-[#f0f0f0] rounded-lg mt-3 flex justify-between "
+          className="p-3 border-b border-gray-200 bg-[#f0f0f0] rounded-lg mt-3 flex justify-between"
         >
           <input
             type="text"
@@ -312,28 +297,25 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
           >
             <RiDeleteBinLine />
           </button>
+          <Handle
+            type="source"
+            id={`${index}handle`}
+            position={Position.Right}
+            style={{
+              ...DEFAULT_HANDLE_STYLE,
+              background: "#B2DEFF",
+              top: positionHandle(index),
+            }}
+            isConnectable={true}
+          />
         </div>
       ))}
-
-      {/* <button
-        onClick={data?.saveNodeToBackend}
-        title="Add Row"
-        className="bg-blue-500 text-white px-4 py-2 rounded-lg mt-4 "
-      >
-        Save
-      </button> */}
 
       <Handle
         type="target"
         position={Position.Left}
         isConnectable={true}
         style={{ ...DEFAULT_HANDLE_STYLE, background: "#B2DEFF" }}
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        style={{ ...DEFAULT_HANDLE_STYLE, background: "#B2DEFF" }}
-        isConnectable={true}
       />
     </div>
   );
