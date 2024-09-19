@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
 import { RiDeleteBinLine } from "react-icons/ri";
 import { FaPlus } from "react-icons/fa6";
 import { RxCross2 } from "react-icons/rx";
+import Select from "react-select";
+import axios from "axios";
 
 const DEFAULT_HANDLE_STYLE = {
   width: 20,
@@ -27,6 +29,12 @@ interface TextUpdaterNodeProps {
   isConnectable: boolean;
 }
 
+// Type for the options used in the Select component
+interface OptionType {
+  label: string;
+  value: string;
+}
+
 // The component for the dynamic condition node
 function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
   const { setNodes, setEdges, addEdges, getNode } = useReactFlow();
@@ -37,6 +45,21 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
     { key: "", expression: "", value: "" },
   ]);
   const [outputs, setOutputs] = useState<string[]>([]);
+  const [configOptions, setConfigOptions] = useState<OptionType[]>([]);
+  const [selectedOption, setSelectedOption] = useState<OptionType | null>(null);
+
+  useEffect(() => {
+    // Fetch configurations for the dropdown
+    axios.get(`${import.meta.env.VITE_API_URL}/configs`).then((response) => {
+      const options = response.data.result.map((config: any) => ({
+        label: config.name,
+        value: config._id,
+      }));
+      setConfigOptions(options);
+    }).catch(error => {
+      console.error("Error fetching configurations:", error);
+    });
+  }, []);
 
   // Function to handle text input change (updates node text)
   const onChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,8 +203,15 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
   };
 
   const positionHandle = (index: number) => {
-    const calculated = 210 + index * 80;
+    const calculated = data?.conditions.length * 76 + 210 + index * 80;
     return calculated;
+  };
+
+  const handleSelectChange = (option: OptionType | null) => {
+    setSelectedOption(option);
+    if (option) {
+      console.log("Selected option:", option);
+    }
   };
 
   return (
@@ -217,7 +247,7 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
             onChange={(e) => setTypeToAdd(e.target.value)}
             className="bg-transparent px-6 py-3 rounded-lg shadow text-black"
           >
-            <option value="condition">Condition</option>
+            <option value="condition">Criteria</option>
             <option value="output">Output</option>
           </select>
           <button
@@ -231,6 +261,14 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
         </div>
       </div>
 
+      <Select
+        options={configOptions}
+        placeholder="Search configurations..."
+        className="mt-4"
+        value={selectedOption}
+        onChange={handleSelectChange}
+      />
+
       {data?.conditions?.map((condition, index) => (
         <div
           key={index}
@@ -238,7 +276,7 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
         >
           <input
             type="text"
-            placeholder="Condition"
+            placeholder="Criteria"
             name="key"
             value={condition.key}
             onChange={(e) => updateConditionRow(index, "key", e.target.value)}
@@ -299,7 +337,7 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
           </button>
           <Handle
             type="source"
-            id={`${index}handle`}
+            id={`${data.id}-output-${index}`}
             position={Position.Right}
             style={{
               ...DEFAULT_HANDLE_STYLE,
@@ -317,6 +355,7 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
         isConnectable={true}
         style={{ ...DEFAULT_HANDLE_STYLE, background: "#B2DEFF" }}
       />
+   
     </div>
   );
 }

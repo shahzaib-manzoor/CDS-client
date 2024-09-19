@@ -26,7 +26,7 @@ export default function App() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<FlowEdge>(
     initialEdges || []
   );
- const [rule, setRule] = useState<any>(null);
+  const [rule, setRule] = useState<any>(null);
   const transformNodesForBackend = (nodes: Node[] = []) => {
     return nodes.map((node) => ({
       name: node.data?.text || "",
@@ -51,6 +51,7 @@ export default function App() {
     return edges.map((edge) => ({
       source: edge.source,
       target: edge.target,
+      sourceHandle: edge.sourceHandle,  
       type: edge.type,
       edgeId: edge.id,
       rules: ruleId,
@@ -62,15 +63,21 @@ export default function App() {
       id: edge.edgeId,
       source: edge.source,
       target: edge.target,
-      type: edge.type,
+      type: "smoothstep",
+
+      sourceHandle: edge.sourceHandle,
       markerEnd: {
         type: MarkerType.ArrowClosed,
         width: 20,
         height: 20,
-        color: '#B2DEFF',
+        color: "#B2DEFF",
+        top: 3000,
+
       },
       style: {
-        stroke: "#B2DEFF", strokeWidth: 8,
+        stroke: "#B2DEFF",
+        strokeWidth: 8,
+        top:3000
       },
     }));
   };
@@ -133,7 +140,7 @@ export default function App() {
         );
         const backendNodes = response.data.result.nodes;
         const backendEdges = response.data.result.edges;
-        
+
         setNodes(transformNodesFromBackend(backendNodes));
         setEdges(transformEdgesFromBackend(backendEdges));
       } catch (error) {
@@ -142,7 +149,7 @@ export default function App() {
     };
 
     fetchNodes();
-    fetchRule(ruleId??'');
+    fetchRule(ruleId ?? "");
   }, [ruleId]);
 
   const saveNodesToBackend = async () => {
@@ -174,7 +181,7 @@ export default function App() {
         position: { x: Math.random() * 400, y: Math.random() * 400 },
         data: {
           id: uniqueId,
-          text: "", 
+          text: "",
           conditions: [],
           onChange: () => {},
           onChangeConditions: () => {},
@@ -184,6 +191,8 @@ export default function App() {
     ]);
   };
 
+  console.log("nodes", nodes);
+  console.log("edges", edges);
   const onEdgeClick = (
     event: ReactMouseEvent<Element, MouseEvent>,
     edge: FlowEdge
@@ -199,17 +208,16 @@ export default function App() {
         `${import.meta.env.VITE_API_URL}/rules/${nodeId}`
       );
       if (response.status === 200) {
-       setRule(response.data.result);
+        setRule(response.data.result);
       }
     } catch (error) {
       console.error("Error fetching node:", error);
     }
 
     return null;
-  }
+  };
 
-
-   return (
+  return (
     <>
       <div className="fixed top-5 left- z-50 bg-white border-b border-gray-300 px-4 py-2 flex justify-between items-center w-9/12">
         <div className="flex items-center space-x-2">
@@ -218,7 +226,11 @@ export default function App() {
           </span>
         </div>
         <div className="flex items-center space-x-2">
-          <button onClick={addNewNode} title="Add" className="focus:outline-none">
+          <button
+            onClick={addNewNode}
+            title="Add"
+            className="focus:outline-none"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-4 w-4 text-gray-500 hover:text-gray-700"
@@ -237,7 +249,11 @@ export default function App() {
           <span className="text-sm text-gray-500 cursor-pointer">Node</span>
         </div>
         <div className="flex items-center space-x-2">
-          <button onClick={saveNodesToBackend} title="Save" className="focus:outline-none">
+          <button
+            onClick={saveNodesToBackend}
+            title="Save"
+            className="focus:outline-none"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-4 w-4 text-gray-500 hover:text-gray-700"
@@ -254,49 +270,58 @@ export default function App() {
             </svg>
           </button>
           <span className="text-sm text-gray-500 cursor-pointer">Save</span>
-          </div>
+        </div>
       </div>
-  
-      
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          style={{ width: "100%", height: "calc(100vh - 64px)", backgroundColor: "#f0f0f0" }} // Adjust height to account for the fixed bar
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          connectionLineStyle={{ stroke: "#B2DEFF", strokeWidth: 8,strokeLinecap:"square", }}
-          connectionLineContainerStyle={{ stroke: "#B2DEFF", strokeWidth: 8,strokeLinecap:"square", }}
-          connectionRadius={2}
-          defaultMarkerColor="#B2DEFF"
-          connectOnClick={true}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onEdgeClick={onEdgeClick}
 
-          
-          onConnect={(connection) => {
-            console.log("onConnect", connection);
-            const edge = {
-              ...connection,
-              type: "smoothstep",
-              markerEnd: {
-                type: MarkerType.ArrowClosed,
-                width: 20,
-                height: 20,
-                color: '#B2DEFF',
-              },
-              style: {
-                stroke: "#B2DEFF", strokeWidth: 8,
-              },
-            }
-            setEdges((edges) => addEdge(edge, edges));
-          }}
-          fitView
-          fitViewOptions={{ padding: 20 }}
-        >
-          <Background gap={33} size={4} variant={BackgroundVariant.Dots} />
-        </ReactFlow>
-   
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        style={{
+          width: "100%",
+          height: "calc(100vh - 64px)",
+          backgroundColor: "#f0f0f0",
+        }} // Adjust height to account for the fixed bar
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        connectionLineStyle={{
+          stroke: "#B2DEFF",
+          strokeWidth: 8,
+          strokeLinecap: "square",
+        }}
+        connectionLineContainerStyle={{
+          stroke: "#B2DEFF",
+          strokeWidth: 8,
+          strokeLinecap: "square",
+        }}
+        connectionRadius={2}
+        defaultMarkerColor="#B2DEFF"
+        connectOnClick={true}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onEdgeClick={onEdgeClick}
+        onConnect={(connection) => {
+          console.log("onConnect", connection);
+          const edge = {
+            ...connection,
+            type: "smoothstep",
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              width: 20,
+              height: 20,
+              color: "#B2DEFF",
+            },
+            style: {
+              stroke: "#B2DEFF",
+              strokeWidth: 8,
+            },
+          };
+          setEdges((edges) => addEdge(edge, edges));
+        }}
+        fitView
+        fitViewOptions={{ padding: 20 }}
+      >
+        <Background gap={33} size={4} variant={BackgroundVariant.Dots} />
+      </ReactFlow>
     </>
   );
 }

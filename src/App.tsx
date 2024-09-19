@@ -10,6 +10,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "./context/AuthProvider";
 import PrivateRoute from "./routes/PrivateRoute";
+import ConfigurationManagement from "./components/configs/inex";
 
 const App: React.FC = () => {
   const { isAuthenticated, loading } = useAuth();
@@ -30,11 +31,11 @@ const App: React.FC = () => {
             <Routes>
               <Route
                 path="/"
-                element={isAuthenticated ? <Navigate to="/rules" /> : <Navigate to="/login" />}
+                element={isAuthenticated ? <Navigate to="/pathways" /> : <Navigate to="/login" />}
               />
               <Route
                 path="/login"
-                element={isAuthenticated ? <Navigate to="/rules" /> : <Login />}
+                element={isAuthenticated ? <Navigate to="/pathways" /> : <Login />}
               />
               <Route
                 path="/mindmap/:ruleId"
@@ -45,13 +46,14 @@ const App: React.FC = () => {
                 }
               />
               <Route
-                path="/rules"
+                path="/pathways"
                 element={
                   <PrivateRoute>
                     <RuleManagement />
                   </PrivateRoute>
                 }
               />
+              <Route path="/criteria" element={<ConfigurationManagement />} />
             </Routes>
           </ReactFlowProvider>
         </div>
