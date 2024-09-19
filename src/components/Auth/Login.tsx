@@ -13,7 +13,7 @@ export default function Login() {
     e.preventDefault();
     await login(email, password);
     // Redirect to protected route if login is successful
-    navigate('/rules');
+    navigate('/pathways');
   };
 
   return (
@@ -35,7 +35,7 @@ export default function Login() {
         <div className="w-1/2 p-12 flex flex-col justify-center">
           <div className="w-2/3">
             <h2 className="text-3xl font-bold text-gray-700 mb-6">Welcome</h2>
-            <p className="text-gray-500 mb-6">Sign in to CDS</p>
+            <p className="text-gray-500 mb-6">Sign in to Cure Natural</p>
             
             <form className="space-y-6" onSubmit={handleSubmit}>
               
