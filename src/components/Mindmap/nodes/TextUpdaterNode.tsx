@@ -203,7 +203,7 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
   };
 
   const positionHandle = (index: number) => {
-    const calculated = data?.conditions.length * 76 + 210 + index * 80;
+    const calculated = data?.conditions.length * 100 + 210 + index * 80;
     return calculated;
   };
 
