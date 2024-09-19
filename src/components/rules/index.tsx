@@ -96,17 +96,17 @@ export default function RuleManagement() {
         <header className="flex justify-between items-center mb-8">
           <div>
             <div className="text-gray-500 text-sm mb-2">
-              Home / Rule Management
+              Home / Pathways Management
             </div>
             <h1 className="text-3xl font-bold text-gray-700">
-              Rule Management
+              Pathways Management
             </h1>
           </div>
           <button
             className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700"
             onClick={() => setModalType("new")}
           >
-            + Create Rule
+            + Create Pathway
           </button>
         </header>
 
@@ -116,7 +116,7 @@ export default function RuleManagement() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Rule Name
+                   Name
                 </th>
                 <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Objective
