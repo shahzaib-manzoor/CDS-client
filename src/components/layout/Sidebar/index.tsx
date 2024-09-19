@@ -26,7 +26,7 @@ const SideBar = () => {
           <li className="flex items-center py-2">
             <FaList className="text-gray-800 mx-2" />
             <Link to="/criteria" className="block py-2 px-4 text-gray-800 hover:bg-gray-200">
-              Criteria
+              Configurations
             </Link>
           </li>
         </ul>

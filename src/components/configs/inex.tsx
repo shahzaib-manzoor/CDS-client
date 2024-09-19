@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef } from "react";
 import { fetchConfigurations } from "../../resources/fetchConfigurations";
-import {  useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 type ModalType = "new" | "edit" | "archive" | "view" | "";
 
@@ -59,9 +61,11 @@ export default function ConfigurationManagement() {
           .then(() => {
             fetchConfigurations().then((configurations) => setConfigurations(configurations));
             setModalType("");
+            toast.success("Configuration archived successfully!");
           });
       } catch (error) {
         console.error("Failed to archive configuration:", error);
+        toast.error("Failed to archive configuration.");
       } finally {
         fetchConfigurations().then((configurations) => setConfigurations(configurations));
       }
@@ -82,11 +86,12 @@ export default function ConfigurationManagement() {
         setModalType("");
         setConfigurationName("");
         setKeyConfigurations([]);
+        toast.success("Configuration created successfully!");
       }           
     } catch (error) {
       console.error("Failed to add configuration:", error);
-    }
-    finally {
+      toast.error("Failed to add configuration.");
+    } finally {
       setModalType("");
     }
   };
@@ -105,11 +110,12 @@ export default function ConfigurationManagement() {
         setModalType("");
         setConfigurationName("");
         setKeyConfigurations([]);
+        toast.success("Configuration updated successfully!");
       }           
     } catch (error) {
       console.error("Failed to update configuration:", error);
-    }
-    finally {
+      toast.error("Failed to update configuration.");
+    } finally {
       setModalType("");
     }
   };
@@ -235,13 +241,13 @@ export default function ConfigurationManagement() {
         {modalType === "new" || (modalType === "edit" && selectedConfiguration) ? (
           <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
             <div className="bg-white rounded-lg p-6 w-96 shadow-lg">
-              <h2 className="text-lg font-semibold mb-4">
+              <h2 className="text-lg font-semibold mb-4">s
                 {modalType === "new" ? "New Configuration" : "Edit Configuration"}
               </h2>
               <input
                 type="text"
                 name="configurationName"
-                disabled={isEditing}
+                disabled={!isEditing}
                 value={configurationName}
                 onChange={(e) => setConfigurationName(e.target.value)}
                 placeholder="Configuration Name"
@@ -254,7 +260,7 @@ export default function ConfigurationManagement() {
                     <input
                       type="text"
                       placeholder="Key"
-                      disabled={isEditing}
+                      disabled={!isEditing}
                       value={config.key}
                       onChange={(e) => updateKeyConfiguration(index, "key", e.target.value)}
                       className="block w-1/2 px-4 py-2 mr-2 border rounded-lg focus:outline-none focus:border-blue-500"
@@ -263,7 +269,7 @@ export default function ConfigurationManagement() {
                       type="text"
                       placeholder="Type"
                       value={config.type}
-                      disabled={isEditing}
+                      disabled={!isEditing}
                       onChange={(e) => updateKeyConfiguration(index, "type", e.target.value)}
                       className="block w-1/2 px-4 py-2 mr-2 border rounded-lg focus:outline-none focus:border-blue-500"
                     />
@@ -325,6 +331,7 @@ export default function ConfigurationManagement() {
           </div>
         )}
       </main>
+      <ToastContainer />
     </div>
   );
 }
