@@ -26,6 +26,11 @@ jobs:
 
       - name: Deploy to server via SSH with password
         run: |
+          if [ -z "${{ secrets.SERVER_IP }}" ] || [ -z "${{ secrets.SERVER_PASSWORD }}" ]; then
+            echo "Server IP or Password not set in secrets!"
+            exit 1
+          fi
+
           sudo apt-get update
           sudo apt-get install -y expect
           expect <<EOF
@@ -33,4 +38,7 @@ jobs:
           expect "password:"
           send "${{ secrets.SERVER_PASSWORD }}\r"
           expect "#"
-          send "cd /var/www/cds-client && git pull origin main && yarn install && yarn build && sudo systemctl restart
+          send "cd /var/www/cds-client && git pull origin main && yarn install && yarn build && sudo systemctl restart nginx\r"
+          expect "#"
+          send "logout\r"
+          EOF
