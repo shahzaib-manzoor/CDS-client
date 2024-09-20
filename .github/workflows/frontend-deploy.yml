@@ -18,12 +18,6 @@ jobs:
         with:
           node-version: "18"
 
-      - name: Install dependencies
-        run: yarn install
-
-      - name: Build project
-        run: yarn build
-
       - name: Deploy to server via SSH with password
         run: |
           if [ -z "${{ secrets.SERVER_IP }}" ] || [ -z "${{ secrets.SERVER_PASSWORD }}" ]; then
