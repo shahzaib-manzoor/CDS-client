@@ -34,7 +34,5 @@ jobs:
           expect "#"
           send "yes"
           expect "#"
-          send "cd /var/www/cds-client && git pull origin main && yarn install && yarn build && sudo systemctl restart nginx\r"
-          expect "#"
           send "logout\r"
           EOF
