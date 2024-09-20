@@ -28,11 +28,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y expect
           expect <<EOF
-          spawn ssh -p 22 root@${{ secrets.SERVER_IP }}
+          spawn ssh -o StrictHostKeyChecking=no -p 22 root@${{ secrets.SERVER_IP }}
           expect "password:"
           send "${{ secrets.SERVER_PASSWORD }}\r"
           expect "#"
-          send "yes"
+          send "cd /var/www/cds-client && git pull origin main && yarn install && yarn build && sudo systemctl restart nginx\r"
           expect "#"
           send "logout\r"
           EOF
