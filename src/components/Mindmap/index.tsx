@@ -35,6 +35,7 @@ export default function App() {
       inputs: [],
       output: [],
       isActive: true,
+      config:node.data?.config || undefined,
       rules: null,
       measured: {
         height: node.measured?.height || 0,
@@ -51,7 +52,7 @@ export default function App() {
     return edges.map((edge) => ({
       source: edge.source,
       target: edge.target,
-      sourceHandle: edge.sourceHandle,  
+      sourceHandle: edge.sourceHandle,
       type: edge.type,
       edgeId: edge.id,
       rules: ruleId,
@@ -72,12 +73,11 @@ export default function App() {
         height: 20,
         color: "#B2DEFF",
         top: 3000,
-
       },
       style: {
         stroke: "#B2DEFF",
         strokeWidth: 8,
-        top:3000
+        top: 3000,
       },
     }));
   };
@@ -92,6 +92,7 @@ export default function App() {
       },
       data: {
         id: node.nodeId,
+        config: node.config || undefined,
         text: node.name,
         outputs: node.outputs || [],
         conditions: node.conditions || [],
@@ -283,16 +284,19 @@ export default function App() {
         }} // Adjust height to account for the fixed bar
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+       
         connectionLineStyle={{
           stroke: "#B2DEFF",
           strokeWidth: 8,
           strokeLinecap: "square",
         }}
+        
         connectionLineContainerStyle={{
           stroke: "#B2DEFF",
           strokeWidth: 8,
           strokeLinecap: "square",
         }}
+      
         connectionRadius={2}
         defaultMarkerColor="#B2DEFF"
         connectOnClick={true}

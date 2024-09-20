@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
-import { RiDeleteBinLine } from "react-icons/ri";
+import React, { useEffect, useState } from "react";
 import { FaPlus } from "react-icons/fa6";
+import { RiDeleteBinLine } from "react-icons/ri";
 import { RxCross2 } from "react-icons/rx";
-import Select from "react-select";
+
 import axios from "axios";
+import ReactSelect from "react-select";
 
 const DEFAULT_HANDLE_STYLE = {
   width: 20,
@@ -18,6 +19,7 @@ interface TextUpdaterNodeProps {
     id: string;
     text: string;
     conditions: { key: string; expression: string; value: string }[];
+    config: string;
     outputs: string[];
     saveNodeToBackend: () => void;
     onChangeOutputs: (outputs: string[]) => void;
@@ -34,6 +36,14 @@ interface OptionType {
   label: string;
   value: string;
 }
+ 
+
+// Type for the configuration
+interface ConfigType {
+  key: string;
+  type: string;
+}
+
 
 // The component for the dynamic condition node
 function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
@@ -41,24 +51,61 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
   const [typeToAdd, setTypeToAdd] = useState("condition");
 
   // State to hold multiple condition rows
-  const [conditions, setConditions] = useState([
-    { key: "", expression: "", value: "" },
-  ]);
-  const [outputs, setOutputs] = useState<string[]>([]);
+  const [conditions, setConditions] = useState(data.conditions);
+  const [outputs, setOutputs] = useState<string[]>(data.outputs);
   const [configOptions, setConfigOptions] = useState<OptionType[]>([]);
-  const [selectedOption, setSelectedOption] = useState<OptionType | null>(null);
+  const [selectedOption, setSelectedOption] = useState<OptionType | null>();
+  const [configurations, setConfigurations] = useState<ConfigType[]>([]);
+  const [selectedConfig, setSelectedConfig] = useState<any | null>(null);
+
+  const getOptionsByType = (key: string) => {
+    console.log("Type:", key);
+    console.log(selectedConfig)
+const type = selectedConfig?.keyConfigurations?.find((c: any) => c.key === key)?.type;
+console.log("Type:", type);
+    switch (type) {
+      case "number":
+        return (
+          <>
+            <option value=">">{">"}</option>
+            <option value="<">{"<"}</option>
+            <option value="=">{"="}</option>
+          </>
+        );
+      case "boolean":
+        return (
+          <>
+            <option value="true">{"true"}</option>
+            <option value="false">{"false"}</option>
+          </>
+        );
+      case "string":
+        return (
+          <>
+            <option value="=">{"equals"}</option>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
 
   useEffect(() => {
     // Fetch configurations for the dropdown
-    axios.get(`${import.meta.env.VITE_API_URL}/configs`).then((response) => {
-      const options = response.data.result.map((config: any) => ({
-        label: config.name,
-        value: config._id,
-      }));
-      setConfigOptions(options);
-    }).catch(error => {
-      console.error("Error fetching configurations:", error);
-    });
+    axios
+      .get(`${import.meta.env.VITE_API_URL}/configs`)
+      .then((response) => {
+        setConfigurations(response.data.result);
+        const options = response.data.result.map((config: any) => ({
+          label: config.name,
+          value: config._id,
+        }));
+        setConfigOptions(options);
+        setSelectedOption(options.find((o:any) => o.value === data.config) || null);
+      })
+      .catch((error) => {
+        console.error("Error fetching configurations:", error);
+      });
   }, []);
 
   // Function to handle text input change (updates node text)
@@ -79,7 +126,7 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
   const addOutput = () => {
     const newOutputs = [...outputs, ""];
     setOutputs(newOutputs);
-    // data?.onChangeOutputs(newOutputs);
+    data?.onChangeOutputs(newOutputs);
     // Update node conditions in React Flow state
     setNodes((nodes) =>
       nodes.map((node) =>
@@ -97,7 +144,7 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
       return;
     } else {
       const newConditions = [
-        ...data.conditions,
+        ...conditions,
         { key: "", expression: "", value: "" },
       ];
       setConditions(newConditions);
@@ -144,7 +191,6 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
       i === index ? { ...row, [field]: value } : row
     );
     setConditions(updatedConditions);
-
     data?.onChangeConditions(updatedConditions);
 
     // Update node conditions in React Flow state
@@ -155,6 +201,17 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
           : node
       )
     );
+
+    // If the key field is updated, update the expression options
+    if (field === "key") {
+      const configType = configurations.find((c) => c.key === value)?.type || "";
+      console.log("Config type:", configType);
+      setConditions((prevConditions) =>
+        prevConditions.map((row, i) =>
+          i === index ? { ...row, expression: "" } : row
+        )
+      );
+    }
   };
 
   const handleRightClick = (event: React.MouseEvent) => {
@@ -187,10 +244,9 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
   };
 
   const updateOutputRow = (index: number, field: string, value: string) => {
-    console.log("index", field);
+    console.log(field)
     const updatedOutputs = outputs.map((row, i) => (i === index ? value : row));
     setOutputs(updatedOutputs);
-
     data?.onChangeOutputs(updatedOutputs);
 
     setNodes((nodes) =>
@@ -209,6 +265,15 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
 
   const handleSelectChange = (option: OptionType | null) => {
     setSelectedOption(option);
+    console.log("Selected option:", option);
+    setNodes((nodes) =>
+      nodes.map((node) =>
+        node.id === data.id
+          ? { ...node, data: { ...node.data, config: option?.value } }
+          : node
+      )
+    );
+    setSelectedConfig(configurations.find((c) => c.key === option?.value) || null);
     if (option) {
       console.log("Selected option:", option);
     }
@@ -261,15 +326,16 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
         </div>
       </div>
 
-      <Select
+      <ReactSelect
         options={configOptions}
         placeholder="Search configurations..."
-        className="mt-4"
+        className="nodrag nopan mb-4"
         value={selectedOption}
+        isSearchable
         onChange={handleSelectChange}
       />
 
-      {data?.conditions?.map((condition, index) => (
+      {conditions.map((condition, index) => (
         <div
           key={index}
           className="p-4 border-b border-gray-200 bg-[#f0f0f0] rounded-lg"
@@ -291,9 +357,9 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
             }
             className="w-20 p-1 border border-gray-300 rounded-md mr-2.5"
           >
-            <option value=">">{">"}</option>
-            <option value="<">{"<"}</option>
-            <option value="=">{"="}</option>
+            {getOptionsByType(
+             condition.key
+            )}
           </select>
           <input
             type="text"
@@ -314,7 +380,7 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
         </div>
       ))}
 
-      {data?.outputs?.map((output: any, index: number) => (
+      {outputs?.map((output: any, index: number) => (
         <div
           key={index}
           className="p-3 border-b border-gray-200 bg-[#f0f0f0] rounded-lg mt-3 flex justify-between"
@@ -355,7 +421,6 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
         isConnectable={true}
         style={{ ...DEFAULT_HANDLE_STYLE, background: "#B2DEFF" }}
       />
-   
     </div>
   );
 }

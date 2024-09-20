@@ -18,13 +18,14 @@ const SideBar = () => {
             </Link>
           </li>
           <li className="flex items-center py-2">
-            <FaCogs className="text-gray-800 mx-2" />
+          <FaList className="text-gray-800 mx-2" />
             <Link to="/pathways" className="block py-2 px-4 text-gray-800 hover:bg-gray-200">
               Pathways
             </Link>
           </li>
           <li className="flex items-center py-2">
-            <FaList className="text-gray-800 mx-2" />
+        
+            <FaCogs className="text-gray-800 mx-2" />
             <Link to="/criteria" className="block py-2 px-4 text-gray-800 hover:bg-gray-200">
               Configurations
             </Link>
