@@ -1,0 +1,36 @@
+name: Frontend Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build project
+        run: yarn build
+
+      - name: Deploy to server via SSH with password
+        run: |
+          apt-get update
+          apt-get install -y expect
+          expect <<EOF
+          spawn ssh -p 22 root@${{ secrets.SERVER_IP }}
+          expect "password:"
+          send "${{ secrets.SERVER_PASSWORD }}\r"
+          expect "#"
+          send "cd /var/www/cds-client && git pull origin main && yarn install && yarn build && sudo systemctl restart
