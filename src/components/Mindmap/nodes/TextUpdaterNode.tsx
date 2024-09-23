@@ -36,14 +36,13 @@ interface OptionType {
   label: string;
   value: string;
 }
- 
 
 // Type for the configuration
 interface ConfigType {
   key: string;
   type: string;
+  keyConfigurations: { key: string; type: string }[];
 }
-
 
 // The component for the dynamic condition node
 function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
@@ -54,15 +53,11 @@ function TextUpdaterNode({ data }: TextUpdaterNodeProps) {
   const [conditions, setConditions] = useState(data.conditions);
   const [outputs, setOutputs] = useState<string[]>(data.outputs);
   const [configOptions, setConfigOptions] = useState<OptionType[]>([]);
-  const [selectedOption, setSelectedOption] = useState<OptionType | null>();
+  const [selectedOption, setSelectedOption] = useState<OptionType | null>(null);
   const [configurations, setConfigurations] = useState<ConfigType[]>([]);
   const [selectedConfig, setSelectedConfig] = useState<any | null>(null);
 
-  const getOptionsByType = (key: string) => {
-    console.log("Type:", key);
-    console.log(selectedConfig)
-const type = selectedConfig?.keyConfigurations?.find((c: any) => c.key === key)?.type;
-console.log("Type:", type);
+  const getOptionsByType = (type: string) => {
     switch (type) {
       case "number":
         return (
@@ -92,21 +87,55 @@ console.log("Type:", type);
 
   useEffect(() => {
     // Fetch configurations for the dropdown
-    axios
-      .get(`${import.meta.env.VITE_API_URL}/configs`)
-      .then((response) => {
+    const fetchConfigurations = async () => {
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/configs`);
         setConfigurations(response.data.result);
         const options = response.data.result.map((config: any) => ({
           label: config.name,
           value: config._id,
         }));
         setConfigOptions(options);
-        setSelectedOption(options.find((o:any) => o.value === data.config) || null);
-      })
-      .catch((error) => {
+        const selectedOption = options.find((o: any) => o.value === data.config) || null;
+        setSelectedOption(selectedOption);
+        const selectedConfig = response.data.result.find((c: any) => c._id === data.config) || null;
+        setSelectedConfig(selectedConfig);
+
+        // Initialize conditions based on the selected configuration
+        if (selectedConfig) {
+          const newConditions = data.conditions.length > 0 ? data.conditions : selectedConfig.keyConfigurations.map((condition: any) => ({
+            key: condition.key,
+            expression: "",
+            value: "",
+          }));
+          setConditions(newConditions);
+          data?.onChangeConditions(newConditions);
+        }
+      } catch (error) {
         console.error("Error fetching configurations:", error);
-      });
+      }
+    };
+
+    fetchConfigurations();
   }, []);
+
+  useEffect(() => {
+    // Sync conditions with backend whenever they change
+    const syncConditionsWithBackend = async () => {
+      try {
+        await axios.post(`${import.meta.env.VITE_API_URL}/saveConditions`, {
+          nodeId: data.id,
+          conditions,
+        });
+      } catch (error) {
+        console.error("Error syncing conditions with backend:", error);
+      }
+    };
+
+    if (conditions) {
+      syncConditionsWithBackend();
+    }
+  }, [conditions]);
 
   // Function to handle text input change (updates node text)
   const onChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
@@ -204,8 +233,6 @@ console.log("Type:", type);
 
     // If the key field is updated, update the expression options
     if (field === "key") {
-      const configType = configurations.find((c) => c.key === value)?.type || "";
-      console.log("Config type:", configType);
       setConditions((prevConditions) =>
         prevConditions.map((row, i) =>
           i === index ? { ...row, expression: "" } : row
@@ -259,13 +286,12 @@ console.log("Type:", type);
   };
 
   const positionHandle = (index: number) => {
-    const calculated = data?.conditions.length * 100 + 210 + index * 80;
+    const calculated = selectedConfig?.keyConfigurations?.length * 130 + 210 + index * 80;
     return calculated;
   };
 
   const handleSelectChange = (option: OptionType | null) => {
     setSelectedOption(option);
-    console.log("Selected option:", option);
     setNodes((nodes) =>
       nodes.map((node) =>
         node.id === data.id
@@ -273,9 +299,18 @@ console.log("Type:", type);
           : node
       )
     );
-    setSelectedConfig(configurations.find((c) => c.key === option?.value) || null);
-    if (option) {
-      console.log("Selected option:", option);
+    const selectedConfig = configurations.find((c: any) => c._id === option?.value) || null;
+    setSelectedConfig(selectedConfig);
+
+    // Reset and initialize conditions based on the selected configuration
+    if (selectedConfig) {
+      const newConditions = selectedConfig?.keyConfigurations.map((condition: any) => ({
+        key: condition.key,
+        expression: "",
+        value: "",
+      }));
+      setConditions(newConditions);
+      data?.onChangeConditions(newConditions);
     }
   };
 
@@ -325,8 +360,9 @@ console.log("Type:", type);
           </button>
         </div>
       </div>
-
+ <p className="text-sm text-gray-500">Select a configuration to add criteria</p>
       <ReactSelect
+      
         options={configOptions}
         placeholder="Search configurations..."
         className="nodrag nopan mb-4"
@@ -335,7 +371,7 @@ console.log("Type:", type);
         onChange={handleSelectChange}
       />
 
-      {conditions.map((condition, index) => (
+      {conditions?.map((condition: any, index: number) => (
         <div
           key={index}
           className="p-4 border-b border-gray-200 bg-[#f0f0f0] rounded-lg"
@@ -357,9 +393,7 @@ console.log("Type:", type);
             }
             className="w-20 p-1 border border-gray-300 rounded-md mr-2.5"
           >
-            {getOptionsByType(
-             condition.key
-            )}
+            {getOptionsByType(selectedConfig?.keyConfigurations?.find((_: any) => _.key === condition.key)?.type || "")}
           </select>
           <input
             type="text"
