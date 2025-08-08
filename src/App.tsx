@@ -1,5 +1,10 @@
 import React from "react";
-import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Navigate,
+} from "react-router-dom";
 import "./App.css";
 import MindMap from "./components/Mindmap";
 import { ReactFlowProvider } from "@xyflow/react";
@@ -20,22 +25,36 @@ const App: React.FC = () => {
   }
 
   return (
-    <Router> {/* Router should be here */}
+    <Router basename="/cdss">
+      {" "}
+      {/* Router should be here */}
       <div className="flex h-screen">
         <ToastContainer />
 
         {isAuthenticated && <SideBar />}
 
-        <div className={`flex-1 ${isAuthenticated ? "md:ml-64" : "w-full"} p-4 overflow-auto`}>
+        <div
+          className={`flex-1 ${
+            isAuthenticated ? "md:ml-64" : "w-full"
+          } p-4 overflow-auto`}
+        >
           <ReactFlowProvider>
             <Routes>
               <Route
                 path="/"
-                element={isAuthenticated ? <Navigate to="/pathways" /> : <Navigate to="/login" />}
+                element={
+                  isAuthenticated ? (
+                    <Navigate to="/pathways" />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
               />
               <Route
                 path="/login"
-                element={isAuthenticated ? <Navigate to="/pathways" /> : <Login />}
+                element={
+                  isAuthenticated ? <Navigate to="/pathways" /> : <Login />
+                }
               />
               <Route
                 path="/mindmap/:ruleId"
