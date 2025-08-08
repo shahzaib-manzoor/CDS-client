@@ -25,7 +25,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <Router basename="/cdss">
+    <Router basename="/cdss-client">
       {" "}
       {/* Router should be here */}
       <div className="flex h-screen">
